@@ -3,14 +3,12 @@
 
 #include "MechaPawn.h"
 
-#include "MaterialStatsCommon.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Scrappable.h"
 #include "Engine/OverlapResult.h"
-#include "Math/UnitConversion.h"
 
 // Sets default values
 AMechaPawn::AMechaPawn()
@@ -94,7 +92,6 @@ void AMechaPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 		EnhancedInputComponent->BindAction(ThrustAction, ETriggerEvent::Triggered, this, &AMechaPawn::ApplyThrust);
 		EnhancedInputComponent->BindAction(TurnAction, ETriggerEvent::Triggered, this, &AMechaPawn::ApplySteer);
 		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Triggered, this, &AMechaPawn::ActivateMagnet);
-		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Completed, this, &AMechaPawn::StopMagnet);
 	}
 }
 
@@ -163,8 +160,6 @@ void AMechaPawn::ActivateMagnet()
 	TArray<FOverlapResult> Overlaps;
 	FCollisionShape Sphere = FCollisionShape::MakeSphere(MagnetRadius);
 	
-	UE_LOG(LogTemp, Warning, TEXT("Magnet activated"));
-	
 	if (GetWorld()->OverlapMultiByChannel(Overlaps, GetActorLocation(), FQuat::Identity, ECC_PhysicsBody, Sphere))
 	{
 		for (auto& Result : Overlaps)
@@ -175,15 +170,9 @@ void AMechaPawn::ActivateMagnet()
 			IScrappable* ScrappableObject = Cast<IScrappable>(OverlappedActor);
 			if (ScrappableObject)
 			{
-				ScrappableObject->OnMagnetPulled(GetActorLocation(), MagnetStrength);
-				UE_LOG(LogTemp, Warning, TEXT("Magnet has found a scrap!"));
+				ScrappableObject->OnMagnetPulled(this, MagnetStrength, CollectionRadius);
 			}
 		}
 	}
-}
-
-void AMechaPawn::StopMagnet()
-{
-	
 }
 

@@ -12,9 +12,8 @@ AScrapActor::AScrapActor()
 	ScrapMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	RootComponent = ScrapMesh;
 	
-	ScrapMesh->SetSimulatePhysics(true);
-	ScrapMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	ScrapMesh->SetCollisionObjectType(ECC_PhysicsBody);
+	ScrapMesh->SetSimulatePhysics(false);
+	ScrapMesh->SetLinearDamping(5.0f);
 }
 
 // Called when the game starts or when spawned
@@ -28,17 +27,71 @@ void AScrapActor::BeginPlay()
 void AScrapActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
+	if (CurrentState == EScrapState::Idle)
+	{
+		return;
+	}
+	
+	float const TimeSinceLastPull = GetWorld()->GetTimeSeconds() - LastPullTime;
+	if (TimeSinceLastPull > MagnetTimeout)
+	{
+		OnMagnetReleased();
+		return;
+	}
+	
+	FVector const CurrentLocation = GetActorLocation();
+	
+	if (CurrentState == EScrapState::Rising)
+	{
+		FVector NewLocation = FMath::VInterpTo(CurrentLocation, TargetHoverLocation, DeltaTime, 2.0f);
+		SetActorLocation(NewLocation);
+		
+		if (FVector::DistSquared(CurrentLocation, TargetHoverLocation) > 100.0f)
+		{
+			CurrentState = EScrapState::Pulling;
+		}
+	}
+	else if (CurrentState == EScrapState::Pulling)
+	{
+		if (PullingActor)
+		{
+			FVector TargetLocation = PullingActor->GetActorLocation() + FVector(0.0f, 0.0f, HoverHeight);
+			FVector NewLocation = FMath::VInterpConstantTo(CurrentLocation, TargetLocation, DeltaTime, MagnetStrength * BasePullSpeed);
+			SetActorLocation(NewLocation);
+			
+			if (FVector::Dist(CurrentLocation, TargetLocation) < CollectionDistance)
+			{
+				OnCollected();
+			}
+		}
+	}
+	
 }
 
-void AScrapActor::OnMagnetPulled(FVector const MagnetLocation, float const PullStrength)
+void AScrapActor::OnMagnetPulled(AActor* MechaActor, float const PullStrength, float const CollectionRadius)
 {
-	if (ScrapMesh && ScrapMesh->IsSimulatingPhysics())
+	if (CurrentState != EScrapState::Idle)
 	{
-		FVector Direction = MagnetLocation - GetActorLocation();
-		Direction.Normalize();
-		
-		ScrapMesh->AddForce(Direction * PullStrength, NAME_None, true);
+		return;
 	}
+
+	LastPullTime = GetWorld()->GetTimeSeconds();
+	PullingActor = MechaActor;
+	MagnetStrength = PullStrength;
+	CollectionDistance = CollectionRadius;
+	
+	TargetHoverLocation = GetActorLocation() + FVector(0.0f, 0.0f, HoverHeight);
+	CurrentState = EScrapState::Rising;
+}
+
+void AScrapActor::OnMagnetReleased()
+{
+	CurrentState = EScrapState::Idle;
+}
+
+void AScrapActor::OnCollected()
+{
+	Destroy();
 }
 

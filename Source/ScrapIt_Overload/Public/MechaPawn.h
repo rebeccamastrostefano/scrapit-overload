@@ -78,6 +78,9 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = "Mecha Magnet")
 	float MagnetRadius = 50.0f;
+	
+	UPROPERTY(EditAnywhere, Category = "Mecha Magnet")
+	float CollectionRadius = 150.0f;
 
 	// Movement Functions
 	void UpdateThrust(float Value);
@@ -86,7 +89,6 @@ protected:
 	
 	//Magnet Functions
 	void ActivateMagnet();
-	void StopMagnet();
 	
 public:	
 	// Called every frame
