@@ -22,7 +22,7 @@ class SCRAPIT_OVERLOAD_API AScrapActor : public AActor, public IScrappable
 public:	
 	// Sets default values for this actor's properties
 	AScrapActor();
-	virtual void OnMagnetPulled(AActor* MechaActor, float PullStrength, float CollectionRadius) override;
+	virtual void OnMagnetPulled(AActor* MechaActor, float PullStrength, float PullRadius, float CollectionRadius) override;
 	virtual void OnMagnetReleased() override;
 	virtual void OnCollected() override;
 
@@ -39,10 +39,10 @@ protected:
 	float BasePullSpeed = 100.0f;
 	
 	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
-	float RiseHeight = 150.0f;
+	float HoverHeight = 150.0f;
 	
 	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
-	float HoverHeight = 150.0f;
+	float MaxBoostSpeed = 5.0f;
 	
 	FVector TargetHoverLocation = FVector::ZeroVector;
 	
@@ -50,6 +50,7 @@ protected:
 	AActor* PullingActor;
 	
 	float MagnetStrength = 1.0f;
+	float MagnetRadius = 1.0f;
 	float CollectionDistance = 1.0f;
 	
 	//How long to wait since last pull from magnet before dropping the scrap

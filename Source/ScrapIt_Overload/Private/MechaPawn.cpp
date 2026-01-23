@@ -92,6 +92,9 @@ void AMechaPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 		EnhancedInputComponent->BindAction(ThrustAction, ETriggerEvent::Triggered, this, &AMechaPawn::ApplyThrust);
 		EnhancedInputComponent->BindAction(TurnAction, ETriggerEvent::Triggered, this, &AMechaPawn::ApplySteer);
 		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Triggered, this, &AMechaPawn::ActivateMagnet);
+		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Started, this, &AMechaPawn::ToggleMagnetMovement);
+		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Canceled, this, &AMechaPawn::ToggleMagnetMovement);
+		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Completed, this, &AMechaPawn::ToggleMagnetMovement);
 	}
 }
 
@@ -170,9 +173,25 @@ void AMechaPawn::ActivateMagnet()
 			IScrappable* ScrappableObject = Cast<IScrappable>(OverlappedActor);
 			if (ScrappableObject)
 			{
-				ScrappableObject->OnMagnetPulled(this, MagnetStrength, CollectionRadius);
+				ScrappableObject->OnMagnetPulled(this, MagnetStrength, MagnetRadius, CollectionRadius);
 			}
 		}
+	}
+}
+
+void AMechaPawn::ToggleMagnetMovement()
+{
+	if (bIsMagnetActive)
+	{
+		bIsMagnetActive = false;
+		AccelerationForce *= SpeedDecrease;
+		UE_LOG(LogTemp, Warning, TEXT("Magnet NOT Active"));
+	}
+	else
+	{
+		bIsMagnetActive = true;
+		AccelerationForce /= SpeedDecrease;
+		UE_LOG(LogTemp, Warning, TEXT("Magnet Active"));
 	}
 }
 

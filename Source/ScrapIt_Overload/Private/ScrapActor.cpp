@@ -44,7 +44,7 @@ void AScrapActor::Tick(float DeltaTime)
 	
 	if (CurrentState == EScrapState::Rising)
 	{
-		FVector NewLocation = FMath::VInterpTo(CurrentLocation, TargetHoverLocation, DeltaTime, 2.0f);
+		FVector const NewLocation = FMath::VInterpTo(CurrentLocation, TargetHoverLocation, DeltaTime, 2.0f);
 		SetActorLocation(NewLocation);
 		
 		if (FVector::DistSquared(CurrentLocation, TargetHoverLocation) > 100.0f)
@@ -56,8 +56,14 @@ void AScrapActor::Tick(float DeltaTime)
 	{
 		if (PullingActor)
 		{
-			FVector TargetLocation = PullingActor->GetActorLocation() + FVector(0.0f, 0.0f, HoverHeight);
-			FVector NewLocation = FMath::VInterpConstantTo(CurrentLocation, TargetLocation, DeltaTime, MagnetStrength * BasePullSpeed);
+			FVector const TargetLocation = PullingActor->GetActorLocation() + FVector(0.0f, 0.0f, HoverHeight);
+			float const Distance = FVector::Dist(CurrentLocation, TargetLocation);
+			
+			//Increase speed the closer the scrap is to the mecha
+			float const DistanceAlpha = FMath::Clamp(1.0f - (Distance / MagnetRadius), 0.0f, 1.0f);
+			float const CurrentSpeed = BasePullSpeed * (MaxBoostSpeed * FMath::Pow(DistanceAlpha, 2.0f));
+			
+			FVector const NewLocation = FMath::VInterpConstantTo(CurrentLocation, TargetLocation, DeltaTime, MagnetStrength * CurrentSpeed);
 			SetActorLocation(NewLocation);
 			
 			if (FVector::Dist(CurrentLocation, TargetLocation) < CollectionDistance)
@@ -66,10 +72,9 @@ void AScrapActor::Tick(float DeltaTime)
 			}
 		}
 	}
-	
 }
 
-void AScrapActor::OnMagnetPulled(AActor* MechaActor, float const PullStrength, float const CollectionRadius)
+void AScrapActor::OnMagnetPulled(AActor* MechaActor, float const PullStrength, float const PullRadius, float const CollectionRadius)
 {
 	if (CurrentState != EScrapState::Idle)
 	{
@@ -79,14 +84,17 @@ void AScrapActor::OnMagnetPulled(AActor* MechaActor, float const PullStrength, f
 	LastPullTime = GetWorld()->GetTimeSeconds();
 	PullingActor = MechaActor;
 	MagnetStrength = PullStrength;
+	MagnetRadius = PullRadius;
 	CollectionDistance = CollectionRadius;
 	
+	ScrapMesh->SetSimulatePhysics(false);
 	TargetHoverLocation = GetActorLocation() + FVector(0.0f, 0.0f, HoverHeight);
 	CurrentState = EScrapState::Rising;
 }
 
 void AScrapActor::OnMagnetReleased()
 {
+	ScrapMesh->SetSimulatePhysics(true);
 	CurrentState = EScrapState::Idle;
 }
 

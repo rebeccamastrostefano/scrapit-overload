@@ -17,7 +17,7 @@ class IScrappable
 	GENERATED_BODY()
 
 public:
-	virtual void OnMagnetPulled(AActor* MechaActor, float PullStrength, float CollectionRadius) = 0;
+	virtual void OnMagnetPulled(AActor* MechaActor, float PullStrength, float PullRadius, float CollectionRadius) = 0;
 	virtual void OnMagnetReleased() = 0;
 	virtual void OnCollected() = 0;
 	
