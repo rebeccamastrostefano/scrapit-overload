@@ -7,6 +7,21 @@
 #include "InputActionValue.h"
 #include "MechaPawn.generated.h"
 
+USTRUCT(BlueprintType)
+struct FMassTier
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere)
+	int32 ScrapThreshold;
+	
+	UPROPERTY(EditAnywhere)
+	float SpeedPenalty;
+	
+	UPROPERTY(EditAnywhere)
+	float SteeringPenalty;
+};
+
 UCLASS()
 class SCRAPIT_OVERLOAD_API AMechaPawn : public APawn
 {
@@ -48,7 +63,7 @@ protected:
 	
 	// MOVEMENT SETTINGS
 	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
-	float AccelerationForce = 500000.0f;
+	float BaseAccelerationForce = 400000.0f;
 	
 	float CurrentSteerAngle = 0.0f;
 	float TargetSteerAngle = 0.0f;
@@ -57,7 +72,7 @@ protected:
 	float MaxSteerAngle = 35.0f;
 	
 	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
-	float SteeringSpeed = 1.0f;
+	float BaseSteeringSpeed = 20.0f;
 	
 	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
 	float HandlingFactor = 0.05f;
@@ -83,7 +98,7 @@ protected:
 	float CollectionRadius = 150.0f;
 	
 	UPROPERTY(EditAnywhere, Category = "Mecha Magnet")
-	float SpeedDecrease = 3.0f;
+	float MagnetSpeedDecrease = 0.5f;
 	
 	bool bIsMagnetActive = false;
 
@@ -96,10 +111,40 @@ protected:
 	void ActivateMagnet();
 	void ToggleMagnetMovement();
 	
+	//Stats
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha Stats")
+	int32 CurrentScraps = 0;
+	
+	float CurrentAcceleration = 0.0f;
+	float CurrentSteerSpeed = 0.0f;
+	
+	//Tiers Management
+	UPROPERTY(EditAnywhere, Category = "Mecha Mass Tiers")
+	TArray<FMassTier> MassTiers;
+	
+	UPROPERTY(EditAnywhere, Category = "Mecha Mass Tiers")
+	TArray<UStaticMeshComponent*> MassMeshParts;
+	
+	UPROPERTY(VisibleAnywhere, Category = "Mecha Mass Tiers")
+	FMassTier CurrentTier;
+	
+	void CheckTierUpgrade();
+	void UpdateMassStats(const FMassTier& Tier);
+	void UpdateMassVisuals(const FMassTier& Tier);
+	
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	
+	//Scrap Management
+	void AddScrap(int32 Amount);
+	
+	UFUNCTION(BlueprintPure, Category = "Mecha Stats")
+	int32 GetCurrentScrapCount() const
+	{
+		return CurrentScraps;
+	}
 };

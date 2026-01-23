@@ -54,7 +54,7 @@ protected:
 	float CollectionDistance = 1.0f;
 	
 	//How long to wait since last pull from magnet before dropping the scrap
-	float MagnetTimeout = 0.2f;
+	float MagnetTimeout = 0.5f;
 	float LastPullTime = 0.0f;
 
 public:	

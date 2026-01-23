@@ -51,6 +51,8 @@ AMechaPawn::AMechaPawn()
 	// Camera creation
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
+	
+	CurrentTier = FMassTier{0, 1, 1};
 }
 
 // Called when the game starts or when spawned
@@ -60,6 +62,8 @@ void AMechaPawn::BeginPlay()
 	
 	SpringArm->CameraLagSpeed = CameraSmoothness;
 	SpringArm->CameraLagMaxDistance = MaxCameraLagDistance;
+	CurrentAcceleration = BaseAccelerationForce;
+	CurrentSteerSpeed = BaseSteeringSpeed;
 	
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
@@ -126,14 +130,18 @@ void AMechaPawn::UpdateThrust(float Value)
 		return;
 	}
 	
+	//Calculate Force taking into account Magnet Status
+	float const SpeedPenalty = bIsMagnetActive ? MagnetSpeedDecrease : 1.0f;
+	float const FinalAcceleration = CurrentAcceleration * SpeedPenalty;
+	
 	// Apply Force (facing direction * Input * Power) to the Mecha
-	FVector const ForceToAdd = MechaMesh->GetForwardVector() * Value * AccelerationForce;
+	FVector const ForceToAdd = MechaMesh->GetForwardVector() * Value * FinalAcceleration;
 	MechaMesh->AddForce(ForceToAdd);
 }
 
 void AMechaPawn::UpdateSteer(float DeltaTime)
 {
-	CurrentSteerAngle = FMath::FInterpTo(CurrentSteerAngle, TargetSteerAngle, DeltaTime, SteeringSpeed);
+	CurrentSteerAngle = FMath::FInterpTo(CurrentSteerAngle, TargetSteerAngle, DeltaTime, CurrentSteerSpeed);
 	FVector const Velocity = MechaMesh->GetPhysicsLinearVelocity();
 	float const ForwardSpeed = FVector::DotProduct(Velocity, MechaMesh->GetForwardVector());
 	
@@ -181,17 +189,44 @@ void AMechaPawn::ActivateMagnet()
 
 void AMechaPawn::ToggleMagnetMovement()
 {
-	if (bIsMagnetActive)
+	bIsMagnetActive = !bIsMagnetActive;
+}
+
+/* --- Scrap Management --- */
+
+void AMechaPawn::AddScrap(int32 Amount)
+{
+	CurrentScraps += Amount;
+	CheckTierUpgrade();
+}
+
+/* --- Mass Tier Management --- */
+
+void AMechaPawn::CheckTierUpgrade()
+{
+	for (const FMassTier& Tier : MassTiers)
 	{
-		bIsMagnetActive = false;
-		AccelerationForce *= SpeedDecrease;
-		UE_LOG(LogTemp, Warning, TEXT("Magnet NOT Active"));
+		if (Tier.ScrapThreshold != CurrentTier.ScrapThreshold && CurrentScraps >= Tier.ScrapThreshold)
+		{
+			UpdateMassStats(Tier);
+			UpdateMassVisuals(Tier);
+			CurrentTier = Tier;
+		}
 	}
-	else
-	{
-		bIsMagnetActive = true;
-		AccelerationForce /= SpeedDecrease;
-		UE_LOG(LogTemp, Warning, TEXT("Magnet Active"));
-	}
+}
+
+void AMechaPawn::UpdateMassStats(const FMassTier& Tier)
+{
+	float const NewAccelerationMult = Tier.SpeedPenalty;
+	float const NewSteeringMult = Tier.SteeringPenalty;
+	
+	CurrentAcceleration = BaseAccelerationForce * NewAccelerationMult;
+	CurrentSteerSpeed = BaseSteeringSpeed * NewSteeringMult;
+	UE_LOG(LogTemp, Warning, TEXT("New Acceleration: %f"), CurrentAcceleration);
+}
+
+void AMechaPawn::UpdateMassVisuals(const FMassTier& Tier)
+{
+	// TODO: Update Visuals based on Tier (turn visible certain MassMeshParts)
 }
 

@@ -2,6 +2,7 @@
 
 
 #include "ScrapActor.h"
+#include "MechaPawn.h"
 
 // Sets default values
 AScrapActor::AScrapActor()
@@ -12,7 +13,7 @@ AScrapActor::AScrapActor()
 	ScrapMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	RootComponent = ScrapMesh;
 	
-	ScrapMesh->SetSimulatePhysics(false);
+	ScrapMesh->SetSimulatePhysics(true);
 	ScrapMesh->SetLinearDamping(5.0f);
 }
 
@@ -87,19 +88,29 @@ void AScrapActor::OnMagnetPulled(AActor* MechaActor, float const PullStrength, f
 	MagnetRadius = PullRadius;
 	CollectionDistance = CollectionRadius;
 	
-	ScrapMesh->SetSimulatePhysics(false);
+	if (ScrapMesh->IsSimulatingPhysics())
+	{
+		ScrapMesh->SetSimulatePhysics(false);
+	}
 	TargetHoverLocation = GetActorLocation() + FVector(0.0f, 0.0f, HoverHeight);
 	CurrentState = EScrapState::Rising;
 }
 
 void AScrapActor::OnMagnetReleased()
 {
-	ScrapMesh->SetSimulatePhysics(true);
+	if (!ScrapMesh->IsSimulatingPhysics())
+	{
+		ScrapMesh->SetSimulatePhysics(true);
+	}
 	CurrentState = EScrapState::Idle;
 }
 
 void AScrapActor::OnCollected()
 {
+	if (AMechaPawn* Mecha = Cast<AMechaPawn>(PullingActor))
+	{
+		Mecha->AddScrap(1);
+	}
 	Destroy();
 }
 
