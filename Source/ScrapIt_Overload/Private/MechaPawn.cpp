@@ -84,6 +84,19 @@ void AMechaPawn::BeginPlay()
 			UE_LOG(LogTemp, Warning, TEXT("MechaPawn is not Possessed by Player Controller"));
 		}
 	}
+	
+	//Populate Mass Mesh Parts array
+	TArray<UStaticMeshComponent*> Meshes; 
+	GetComponents<UStaticMeshComponent>(Meshes);
+	
+	for (UStaticMeshComponent* Mesh : Meshes)
+	{
+		if (Mesh->ComponentHasTag("MassTier"))
+		{
+			MassMeshParts.Add(Mesh);
+			Mesh->SetVisibility(false);
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -228,6 +241,12 @@ void AMechaPawn::UpdateMassStats(const FMassTier& Tier)
 
 void AMechaPawn::UpdateMassVisuals(const FMassTier& Tier)
 {
-	// TODO: Update Visuals based on Tier (turn visible certain MassMeshParts)
+	for (UStaticMeshComponent* Mesh : MassMeshParts)
+	{
+		if (Mesh->ComponentHasTag(FName(FString::FromInt(Tier.TierNumber))))
+		{
+			Mesh->SetVisibility(true);
+		}
+	}
 }
 

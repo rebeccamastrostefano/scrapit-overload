@@ -15,12 +15,15 @@ struct FMassTier
 	GENERATED_BODY()
 	
 	UPROPERTY(EditAnywhere)
+	int8 TierNumber;
+	
+	UPROPERTY(EditAnywhere)
 	int32 ScrapThreshold;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, meta = (UIMin = "0.1", ClampMin = "0.1", ClampMax = "1.0"))
 	float SpeedPenalty;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, meta = (UIMin = "0.1", ClampMin = "0.1", ClampMax = "1.0"))
 	float SteeringPenalty;
 };
 
@@ -99,7 +102,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Mecha Magnet")
 	float CollectionRadius = 150.0f;
 	
-	UPROPERTY(EditAnywhere, Category = "Mecha Magnet")
+	UPROPERTY(EditAnywhere, meta = (UIMin = "0.1", ClampMin = "0.1", ClampMax = "1.0"), Category = "Mecha Magnet")
 	float MagnetSpeedDecrease = 0.5f;
 	
 	bool bIsMagnetActive = false;
@@ -124,7 +127,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Mecha Mass Tiers")
 	TArray<FMassTier> MassTiers;
 	
-	UPROPERTY(EditAnywhere, Category = "Mecha Mass Tiers")
+	UPROPERTY(VisibleAnywhere, Category = "Mecha Mass Tiers")
 	TArray<UStaticMeshComponent*> MassMeshParts;
 	
 	UPROPERTY(VisibleAnywhere, Category = "Mecha Mass Tiers")
