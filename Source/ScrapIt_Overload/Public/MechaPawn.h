@@ -7,6 +7,8 @@
 #include "InputActionValue.h"
 #include "MechaPawn.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScrapCountChanged, int32, NewScrapCount);
+
 USTRUCT(BlueprintType)
 struct FMassTier
 {
@@ -147,4 +149,7 @@ public:
 	{
 		return CurrentScraps;
 	}
+	
+	UPROPERTY(BlueprintAssignable, Category = "Mecha Stats")
+	FOnScrapCountChanged OnScrapCountChanged;
 };

@@ -197,6 +197,7 @@ void AMechaPawn::ToggleMagnet()
 void AMechaPawn::AddScrap(int32 Amount)
 {
 	CurrentScraps += Amount;
+	OnScrapCountChanged.Broadcast(CurrentScraps);
 	CheckTierUpgrade();
 }
 
