@@ -109,7 +109,7 @@ protected:
 	
 	//Magnet Functions
 	void ActivateMagnet();
-	void ToggleMagnetMovement();
+	void ToggleMagnet();
 	
 	//Stats
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha Stats")

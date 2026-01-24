@@ -35,7 +35,6 @@ AMechaPawn::AMechaPawn()
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
 	SpringArm->TargetArmLength = 800.0f;
-	SpringArm->SetRelativeRotation(FRotator(-60.0f, 0.f, 0.f));
 	
 	//Camera Lag
 	SpringArm->bEnableCameraLag = true;
@@ -64,6 +63,7 @@ void AMechaPawn::BeginPlay()
 	SpringArm->CameraLagMaxDistance = MaxCameraLagDistance;
 	CurrentAcceleration = BaseAccelerationForce;
 	CurrentSteerSpeed = BaseSteeringSpeed;
+	SpringArm->SetRelativeRotation(FRotator(-60.0f, 0.f, 0.f));
 	
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
@@ -96,9 +96,9 @@ void AMechaPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 		EnhancedInputComponent->BindAction(ThrustAction, ETriggerEvent::Triggered, this, &AMechaPawn::ApplyThrust);
 		EnhancedInputComponent->BindAction(TurnAction, ETriggerEvent::Triggered, this, &AMechaPawn::ApplySteer);
 		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Triggered, this, &AMechaPawn::ActivateMagnet);
-		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Started, this, &AMechaPawn::ToggleMagnetMovement);
-		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Canceled, this, &AMechaPawn::ToggleMagnetMovement);
-		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Completed, this, &AMechaPawn::ToggleMagnetMovement);
+		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Started, this, &AMechaPawn::ToggleMagnet);
+		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Canceled, this, &AMechaPawn::ToggleMagnet);
+		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Completed, this, &AMechaPawn::ToggleMagnet);
 	}
 }
 
@@ -187,7 +187,7 @@ void AMechaPawn::ActivateMagnet()
 	}
 }
 
-void AMechaPawn::ToggleMagnetMovement()
+void AMechaPawn::ToggleMagnet()
 {
 	bIsMagnetActive = !bIsMagnetActive;
 }
