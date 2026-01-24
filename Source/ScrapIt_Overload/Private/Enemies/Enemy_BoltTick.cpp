@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Enemy_BoltTick.h"
+#include "Enemies/Enemy_BoltTick.h"
 
 // Sets default values
 AEnemy_BoltTick::AEnemy_BoltTick()

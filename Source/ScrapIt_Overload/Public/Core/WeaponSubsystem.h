@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "ScrapActor.h"
+#include "Scraps/ScrapActor.h"
 #include "WeaponsDatabase.h"
 #include "WeaponSubsystem.generated.h"
 

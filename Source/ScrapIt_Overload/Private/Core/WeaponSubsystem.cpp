@@ -2,7 +2,7 @@
 
 
 #include "Core/WeaponSubsystem.h"
-#include "WeaponsDatabase.h"
+#include "Core/WeaponsDatabase.h"
 
 void UWeaponSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {

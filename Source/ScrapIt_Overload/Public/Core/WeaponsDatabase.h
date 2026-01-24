@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "ScrapActor.h"
+#include "Scraps/ScrapActor.h"
 #include "WeaponsDatabase.generated.h"
 
 /**

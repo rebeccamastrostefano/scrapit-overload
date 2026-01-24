@@ -7,7 +7,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "Scrappable.h"
+#include "Interfaces/Scrappable.h"
 #include "Engine/OverlapResult.h"
 
 // Sets default values

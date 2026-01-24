@@ -4,8 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
-#include "Damageable.h"
-#include "Scrappable.h"
+#include "Interfaces/Damageable.h"
 #include "Components/SphereComponent.h"
 #include "Enemy_BoltTick.generated.h"
 

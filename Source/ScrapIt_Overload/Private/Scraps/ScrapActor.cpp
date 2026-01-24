@@ -1,10 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ScrapActor.h"
+#include "Scraps/ScrapActor.h"
 #include "Kismet/GameplayStatics.h"
 #include "MechaPawn.h"
-#include "Weapon_Screws.h"
 #include "Core/WeaponSubsystem.h"
 
 // Sets default values

@@ -1,9 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Weapon_Screws.h"
+#include "Weapons/Weapon_Screws.h"
 
-#include "Damageable.h"
+#include "Interfaces/Damageable.h"
 #include "Components/BoxComponent.h"
 
 // Sets default values

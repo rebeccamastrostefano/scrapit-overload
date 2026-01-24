@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Scrappable.h"
+#include "Interfaces/Scrappable.h"
 #include "ScrapActor.generated.h"
 
 UENUM(BlueprintType)
