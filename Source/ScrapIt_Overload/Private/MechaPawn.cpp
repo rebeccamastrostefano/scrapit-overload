@@ -52,6 +52,19 @@ AMechaPawn::AMechaPawn()
 	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
 	
 	CurrentTier = FMassTier{0, 1, 1};
+	
+	//Socket creation
+	SocketFront = CreateDefaultSubobject<USceneComponent>(TEXT("SocketFront"));
+	SocketFront->SetupAttachment(RootComponent);
+	
+	SocketBack = CreateDefaultSubobject<USceneComponent>(TEXT("SocketBack"));
+	SocketBack->SetupAttachment(RootComponent);
+	
+	SocketLeft = CreateDefaultSubobject<USceneComponent>(TEXT("SocketLeft"));
+	SocketLeft->SetupAttachment(RootComponent);
+	
+	SocketRight = CreateDefaultSubobject<USceneComponent>(TEXT("SocketRight"));
+	SocketRight->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -246,6 +259,42 @@ void AMechaPawn::UpdateMassVisuals(const FMassTier& Tier)
 		if (Mesh->ComponentHasTag(FName(FString::FromInt(Tier.TierNumber))))
 		{
 			Mesh->SetVisibility(true);
+		}
+	}
+}
+
+void AMechaPawn::EquipWeapon(TSubclassOf<AActor> WeaponClass, EWeaponSocket Socket)
+{
+	USceneComponent* AttachSocket = nullptr;
+	switch(Socket)
+	{
+		case EWeaponSocket::Front:
+			AttachSocket = SocketFront;
+			break;
+		case EWeaponSocket::Back:
+			AttachSocket = SocketBack;
+			break;
+		case EWeaponSocket::Left:
+			AttachSocket = SocketLeft;
+			break;
+		case EWeaponSocket::Right:
+			AttachSocket = SocketRight;
+			break;
+		default:
+			AttachSocket = SocketFront;
+	}
+	
+	if (WeaponClass && AttachSocket)
+	{
+		//Spawn weapon and attach to socket
+		FActorSpawnParameters SpawnInfo;
+		SpawnInfo.Owner = this;
+		AActor* NewWeapon = GetWorld()->SpawnActor<AActor>(WeaponClass, AttachSocket->GetComponentTransform(), SpawnInfo);
+		
+		if (NewWeapon)
+		{
+			NewWeapon->AttachToComponent(AttachSocket, FAttachmentTransformRules::KeepWorldTransform);
+			EquippedWeapons.Add(NewWeapon);
 		}
 	}
 }

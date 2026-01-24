@@ -27,6 +27,15 @@ struct FMassTier
 	float SteeringPenalty;
 };
 
+UENUM()
+enum class EWeaponSocket : uint8
+{
+	Front,
+	Back,
+	Left,
+	Right
+};
+
 UCLASS()
 class SCRAPIT_OVERLOAD_API AMechaPawn : public APawn
 {
@@ -65,6 +74,19 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UCameraComponent* Camera;
+	
+	//Sockets
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha Sockets")
+	USceneComponent* SocketFront;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha Sockets")
+	USceneComponent* SocketBack;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha Sockets")
+	USceneComponent* SocketLeft;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha Sockets")
+	USceneComponent* SocketRight;
 	
 	// MOVEMENT SETTINGS
 	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
@@ -155,4 +177,10 @@ public:
 	
 	UPROPERTY(BlueprintAssignable, Category = "Mecha Stats")
 	FOnScrapCountChanged OnScrapCountChanged;
+	
+	//Weapons
+	void EquipWeapon(TSubclassOf<AActor> WeaponClass, EWeaponSocket Socket);
+	
+	UPROPERTY(VisibleAnywhere, Category = "Mecha Weapons")
+	TArray<AActor*> EquippedWeapons;
 };

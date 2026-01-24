@@ -17,6 +17,10 @@ class SCRAPIT_OVERLOAD_API AScrapItGameMode : public AGameModeBase
 public:
 	AScrapItGameMode();
 	
+	UPROPERTY(EditAnywhere, Category = "Config")
+	class UWeaponsDatabase* WeaponsDatabase;
+	
 protected:
+	void BeginPlay() override;
 	
 };

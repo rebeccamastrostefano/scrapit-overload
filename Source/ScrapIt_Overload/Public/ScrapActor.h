@@ -6,12 +6,20 @@
 #include "GameFramework/Actor.h"
 #include "Scrappable.h"
 #include "ScrapActor.generated.h"
+
 UENUM(BlueprintType)
 enum class EScrapState : uint8
 {
 	Idle,
 	Rising,
 	Pulling
+};
+
+UENUM(BlueprintType)
+enum class EScrapType : uint8
+{
+	Basic,
+	Weapon_Screws,
 };
 
 UCLASS()
@@ -34,6 +42,9 @@ protected:
 	class UStaticMeshComponent* ScrapMesh;
 	
 	EScrapState CurrentState = EScrapState::Idle;
+	
+	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
+	EScrapType ScrapType = EScrapType::Basic;
 	
 	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
 	float BasePullSpeed = 100.0f;
