@@ -20,6 +20,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Config")
 	class UWeaponsDatabase* WeaponsDatabase;
 	
+	UPROPERTY(EditAnywhere, Category = "Config")
+	TSubclassOf<AActor> BasicScrapBP;
+	
 protected:
 	void BeginPlay() override;
 	

@@ -2,6 +2,7 @@
 
 
 #include "Enemies/Enemy_BoltTick.h"
+#include "Scraps/ScrapSubsystem.h"
 
 // Sets default values
 AEnemy_BoltTick::AEnemy_BoltTick()
@@ -44,6 +45,7 @@ void AEnemy_BoltTick::TakeDamage(float DamageAmount)
 
 void AEnemy_BoltTick::SpawnScrap()
 {
-	//TODO: Spawn scraps (probably a scrap spawner singleton)
+	UE_LOG(LogTemp, Warning, TEXT("Spawning %d scraps"), ScrapDrop);
+	GetWorld()->GetSubsystem<UScrapSubsystem>()->SpawnRandomScrapsAtLocation(GetActorLocation(), ScrapDrop);
 }
 

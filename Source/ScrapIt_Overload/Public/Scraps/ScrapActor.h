@@ -71,5 +71,15 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	
+	void SetScrapType(EScrapType const Type)
+	{
+		ScrapType = Type;
+	}
+	
+	EScrapType GetScrapType() const
+	{
+		return ScrapType;
+	}
 
 };
