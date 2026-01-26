@@ -8,6 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Interfaces/Scrappable.h"
+#include "Components/BoxComponent.h"
 #include "Engine/OverlapResult.h"
 
 // Sets default values
@@ -65,6 +66,12 @@ AMechaPawn::AMechaPawn()
 	
 	SocketRight = CreateDefaultSubobject<USceneComponent>(TEXT("SocketRight"));
 	SocketRight->SetupAttachment(RootComponent);
+	
+	//Hurtbox creation
+	Hurtbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Hurtbox"));
+	Hurtbox->SetupAttachment(RootComponent);
+	Hurtbox->SetSimulatePhysics(false);
+	Hurtbox->SetCollisionProfileName(TEXT("Trigger"));
 }
 
 // Called when the game starts or when spawned
@@ -297,5 +304,11 @@ void AMechaPawn::EquipWeapon(TSubclassOf<AActor> WeaponClass, EWeaponSocket Sock
 			EquippedWeapons.Add(NewWeapon);
 		}
 	}
+}
+
+void AMechaPawn::TakeDamage(float Amount)
+{
+	UE_LOG(LogTemp, Warning, TEXT("MechaPawn Taking Damage: %f"), Amount);
+	//TODO: Implement Damage Logic
 }
 

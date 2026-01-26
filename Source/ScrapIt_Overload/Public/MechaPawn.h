@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "InputActionValue.h"
+#include "Interfaces/Damageable.h"
 #include "MechaPawn.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScrapCountChanged, int32, NewScrapCount);
@@ -37,7 +38,7 @@ enum class EWeaponSocket : uint8
 };
 
 UCLASS()
-class SCRAPIT_OVERLOAD_API AMechaPawn : public APawn
+class SCRAPIT_OVERLOAD_API AMechaPawn : public APawn, public IDamageable
 {
 	GENERATED_BODY()
 
@@ -74,6 +75,9 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UCameraComponent* Camera;
+	
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Components")
+	class UBoxComponent* Hurtbox;
 	
 	//Sockets
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha Sockets")
@@ -183,4 +187,6 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, Category = "Mecha Weapons")
 	TArray<AActor*> EquippedWeapons;
+	
+	void TakeDamage(float Amount);
 };
