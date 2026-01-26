@@ -61,14 +61,16 @@ void AEnemy_BoltTick::Tick(float DeltaTime)
 			
 				AddMovementInput(Direction, 1.0f);
 				break;
-			case EState::ES_Attacking:
-				break;
 			case EState::ES_Cooldown:
 				//Enemy backs up to attack again
 				if (DistanceToMecha <= AttackRange)
 				{
 					AddMovementInput(Direction, -1.0f);
 				}
+				break;
+			case EState::ES_Attacking:
+				break;
+			case EState::ES_Hurt:
 				break;
 			default: 
 				break;
@@ -86,7 +88,7 @@ void AEnemy_BoltTick::StartAttack()
 void AEnemy_BoltTick::ExecuteAttack()
 {
 	FVector const AttackDirection = (MechaTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-	MovementComp->Velocity = AttackDirection * 1000.f;
+	MovementComp->Velocity = AttackDirection * AttackForce;
 	
 	CurrentState = EState::ES_Cooldown;
 	GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemy_BoltTick::ResetMovement, AttackCooldown, false);
@@ -117,6 +119,19 @@ void AEnemy_BoltTick::TakeDamage(float DamageAmount)
 	{
 		SpawnScrap();
 		Destroy();
+	}
+	else
+	{
+		//knockback slightly
+		FVector const KnockbackDirection = (GetActorLocation() - MechaTarget->GetActorLocation()).GetSafeNormal();
+		CurrentState = EState::ES_Hurt;
+		MovementComp->StopMovementImmediately();
+		GetWorldTimerManager().SetTimer(AttackTimer, [this, KnockbackDirection]() 
+			{ 
+				MovementComp->Velocity = KnockbackDirection * KnockbackForce;
+				GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemy_BoltTick::ResetMovement, 1.0f, false);
+			}, 0.1f, false);
+		
 	}
 }
 

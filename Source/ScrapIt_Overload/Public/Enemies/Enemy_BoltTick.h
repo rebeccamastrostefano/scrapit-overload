@@ -17,7 +17,7 @@ enum class EState : uint8
 	ES_Chasing,
 	ES_Attacking,
 	ES_Cooldown,
-	ES_Dead
+	ES_Hurt
 };
 
 UCLASS()
@@ -61,6 +61,12 @@ protected:
 	
 	UPROPERTY(EditAnywhere)
 	float AttackCooldown = 1.f;
+	
+	UPROPERTY(EditAnywhere)
+	int32 AttackForce = 1000;
+	
+	UPROPERTY(EditAnywhere)
+	int32 KnockbackForce = 800;
 	
 	UPROPERTY(VisibleAnywhere)
 	float CurrentHealth;
