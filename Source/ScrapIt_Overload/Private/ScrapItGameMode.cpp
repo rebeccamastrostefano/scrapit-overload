@@ -4,7 +4,7 @@
 #include "ScrapItGameMode.h"
 #include "MechaPawn.h"
 #include "Core/WeaponSubsystem.h"
-#include "Scraps/ScrapSubsystem.h"
+#include "Subsystems/GameManager.h"
 
 AScrapItGameMode::AScrapItGameMode()
 {
@@ -15,7 +15,7 @@ void AScrapItGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	UWeaponSubsystem* WeaponSS = GetGameInstance()->GetSubsystem<UWeaponSubsystem>();
-	UScrapSubsystem* ScrapSS = GetWorld()->GetSubsystem<UScrapSubsystem>();
+	UGameManager* ScrapSS = GetWorld()->GetSubsystem<UGameManager>();
 	
 	if (WeaponSS && WeaponsDatabase)
 	{

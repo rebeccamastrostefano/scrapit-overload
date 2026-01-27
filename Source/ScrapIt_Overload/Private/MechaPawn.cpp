@@ -270,7 +270,12 @@ void AMechaPawn::UpdateMassVisuals(const FMassTier& Tier)
 	}
 }
 
-void AMechaPawn::EquipWeapon(TSubclassOf<AActor> WeaponClass, EWeaponSocket Socket)
+void AMechaPawn::EquipWeapon(TSubclassOf<AActor> WeaponClass)
+{
+	OnWeaponAcquired.Broadcast(WeaponClass);
+}
+
+void AMechaPawn::AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSocket Socket)
 {
 	USceneComponent* AttachSocket = nullptr;
 	switch(Socket)

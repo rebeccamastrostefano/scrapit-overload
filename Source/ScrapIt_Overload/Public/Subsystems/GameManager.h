@@ -4,14 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
-#include "ScrapActor.h"
-#include "ScrapSubsystem.generated.h"
+#include "Scraps/ScrapActor.h"
+#include "GameManager.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class SCRAPIT_OVERLOAD_API UScrapSubsystem : public UWorldSubsystem
+class SCRAPIT_OVERLOAD_API UGameManager : public UWorldSubsystem
 {
 	GENERATED_BODY()
 	

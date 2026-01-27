@@ -1,9 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Scraps/ScrapSubsystem.h"
+#include "Subsystems/GameManager.h"
 
-void UScrapSubsystem::SpawnRandomScrapsAtLocation(FVector Location, int8 Amount)
+void UGameManager::SpawnRandomScrapsAtLocation(FVector Location, int8 Amount)
 {
 	if (!BasicScrapBlueprint)
 	{
@@ -14,7 +14,7 @@ void UScrapSubsystem::SpawnRandomScrapsAtLocation(FVector Location, int8 Amount)
 	if (UWorld* World = GetWorld())
 	{
 		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		
 		for (int i = 0; i < Amount; i++)
 		{
@@ -34,7 +34,6 @@ void UScrapSubsystem::SpawnRandomScrapsAtLocation(FVector Location, int8 Amount)
 					Root->AddImpulse(RandomImpulse + FVector(0,0,500), NAME_None, true);
 				}
 			}
-			UE_LOG(LogTemp, Warning, TEXT("Spawned Scrap"))
 		}
 	}
 }

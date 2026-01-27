@@ -131,8 +131,7 @@ void AScrapActor::OnCollected()
                 	{
                 		if (const TSubclassOf<AActor> WeaponBP = WeaponSS->GetWeaponBlueprint(ScrapType))
                 		{
-                			//TODO: Player can choose which socket to attach it to
-                			Mecha->EquipWeapon(WeaponBP, EWeaponSocket::Front);
+                			Mecha->EquipWeapon(WeaponBP);
                 		}
                 	}
                 }

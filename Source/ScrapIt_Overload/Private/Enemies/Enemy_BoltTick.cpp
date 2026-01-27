@@ -6,7 +6,7 @@
 #include "MechaPawn.h"
 #include "GameFramework/FloatingPawnMovement.h"
 #include "Kismet/GameplayStatics.h"
-#include "Scraps/ScrapSubsystem.h"
+#include "Subsystems//GameManager.h"
 
 // Sets default values
 AEnemy_BoltTick::AEnemy_BoltTick()
@@ -129,7 +129,7 @@ void AEnemy_BoltTick::TakeDamage(float DamageAmount)
 		GetWorldTimerManager().SetTimer(AttackTimer, [this, KnockbackDirection]() 
 			{ 
 				MovementComp->Velocity = KnockbackDirection * KnockbackForce;
-				GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemy_BoltTick::ResetMovement, 1.0f, false);
+				GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemy_BoltTick::ResetMovement, AttackCooldown, false);
 			}, 0.1f, false);
 		
 	}
@@ -138,6 +138,6 @@ void AEnemy_BoltTick::TakeDamage(float DamageAmount)
 void AEnemy_BoltTick::SpawnScrap()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Spawning %d scraps"), ScrapDrop);
-	GetWorld()->GetSubsystem<UScrapSubsystem>()->SpawnRandomScrapsAtLocation(GetActorLocation(), ScrapDrop);
+	GetWorld()->GetSubsystem<UGameManager>()->SpawnRandomScrapsAtLocation(GetActorLocation(), ScrapDrop);
 }
 

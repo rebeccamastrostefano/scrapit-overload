@@ -9,6 +9,7 @@
 #include "MechaPawn.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScrapCountChanged, int32, NewScrapCount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponAcquired, TSubclassOf<AActor>, WeaponClass);
 
 USTRUCT(BlueprintType)
 struct FMassTier
@@ -28,7 +29,7 @@ struct FMassTier
 	float SteeringPenalty;
 };
 
-UENUM()
+UENUM(BlueprintType)
 enum class EWeaponSocket : uint8
 {
 	Front,
@@ -183,7 +184,13 @@ public:
 	FOnScrapCountChanged OnScrapCountChanged;
 	
 	//Weapons
-	void EquipWeapon(TSubclassOf<AActor> WeaponClass, EWeaponSocket Socket);
+	void EquipWeapon(TSubclassOf<AActor> WeaponClass);
+	
+	UPROPERTY(BlueprintAssignable, Category = "Mecha Weapons")
+	FOnWeaponAcquired OnWeaponAcquired;
+	
+	UFUNCTION(BlueprintCallable, Category = "Mecha Weapons")
+	void AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSocket Socket);
 	
 	UPROPERTY(VisibleAnywhere, Category = "Mecha Weapons")
 	TArray<AActor*> EquippedWeapons;
