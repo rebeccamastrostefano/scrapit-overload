@@ -72,6 +72,19 @@ AMechaPawn::AMechaPawn()
 	Hurtbox->SetupAttachment(RootComponent);
 	Hurtbox->SetSimulatePhysics(false);
 	Hurtbox->SetCollisionProfileName(TEXT("Trigger"));
+	
+	//Wheels creation
+	WheelFrontLeft = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WheelFrontLeft"));
+	WheelFrontLeft->SetupAttachment(RootComponent);
+	
+	WheelFrontRight = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WheelFrontRight"));
+	WheelFrontRight->SetupAttachment(RootComponent);
+	
+	WheelBackLeft = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WheelBackLeft"));
+	WheelBackLeft->SetupAttachment(RootComponent);
+	
+	WheelBackRight = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WheelBackRight"));
+	WheelBackRight->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -142,6 +155,7 @@ void AMechaPawn::Tick(float DeltaTime)
 	
 	UpdateSteer(DeltaTime);
 	ApplyLateralFriction();
+	AnimateWheels(DeltaTime);
 }
 
 void AMechaPawn::ApplyThrust(const FInputActionValue& Value)
@@ -315,5 +329,27 @@ void AMechaPawn::TakeDamage(float Amount)
 {
 	UE_LOG(LogTemp, Warning, TEXT("MechaPawn Taking Damage: %f"), Amount);
 	//TODO: Implement Damage Logic
+}
+
+void AMechaPawn::AnimateWheels(float DeltaTime)
+{
+	FVector const Velocity = MechaMesh->GetPhysicsLinearVelocity();
+	if (Velocity == FVector::ZeroVector)
+	{
+		return;
+	}
+	
+	float const ForwardSpeed = FVector::DotProduct(Velocity, MechaMesh->GetForwardVector());
+	
+	float const DeltaRoll = (ForwardSpeed * DeltaTime / WheelRadius) * (180.f / PI);
+	CurrentWheelRoll += DeltaRoll;
+	
+	float const TargetAngle = FMath::Clamp(CurrentSteerAngle, -MaxWheelAngle, MaxWheelAngle);
+	CurrentWheelAngle = FMath::FInterpTo(CurrentWheelAngle, TargetAngle, DeltaTime, 3.f);
+	
+	WheelFrontLeft->SetRelativeRotation(FRotator(-CurrentWheelRoll, CurrentWheelAngle, 0.f));
+	WheelFrontRight->SetRelativeRotation(FRotator(-CurrentWheelRoll, CurrentWheelAngle, 0.f));
+	WheelBackLeft->SetRelativeRotation(FRotator(-CurrentWheelRoll, 0.f, 0.f));
+	WheelBackRight->SetRelativeRotation(FRotator(-CurrentWheelRoll, 0.f, 0.f));
 }
 

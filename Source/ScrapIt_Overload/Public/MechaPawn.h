@@ -93,12 +93,27 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha Sockets")
 	USceneComponent* SocketRight;
 	
+	//Wheels
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha Wheels")
+	UStaticMeshComponent* WheelFrontLeft;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha Wheels")
+	UStaticMeshComponent* WheelFrontRight;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha Wheels")
+	UStaticMeshComponent* WheelBackLeft;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha Wheels")
+	UStaticMeshComponent* WheelBackRight;
+	
 	// MOVEMENT SETTINGS
 	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
 	float BaseAccelerationForce = 400000.0f;
 	
 	float CurrentSteerAngle = 0.0f;
 	float TargetSteerAngle = 0.0f;
+	float CurrentWheelRoll = 0.0f;
+	float CurrentWheelAngle = 0.0f;
 	
 	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
 	float MaxSteerAngle = 35.0f;
@@ -111,6 +126,12 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
 	float GripStrength = 0.5f;
+	
+	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
+	float WheelRadius = 35.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
+	float MaxWheelAngle = 35.f;
 	
 	// CAMERA SETTINGS
 	UPROPERTY(EditAnywhere, Category = "Mecha Camera")
@@ -138,6 +159,7 @@ protected:
 	void UpdateThrust(float Value);
 	void UpdateSteer(float DeltaTime);
 	void ApplyLateralFriction();
+	void AnimateWheels(float DeltaTime);
 	
 	//Magnet Functions
 	void ActivateMagnet();

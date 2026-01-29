@@ -20,6 +20,7 @@ void UGameManager::SpawnRandomScrapsAtLocation(FVector Location, int8 Amount)
 		{
 			const float RandomYaw = FMath::RandRange(0.f, 360.f);
 			const FRotator RandomRotation = FRotator(0.f, RandomYaw, 0.f);
+			Location.Z += 50.f;
 			const FVector FinalLocation = Location + (FMath::VRand() * 50);
 			
 			AScrapActor* NewScrap = World->SpawnActor<AScrapActor>(BasicScrapBlueprint, FinalLocation, RandomRotation, SpawnParams);
