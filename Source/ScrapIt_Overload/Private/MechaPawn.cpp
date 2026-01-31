@@ -92,6 +92,7 @@ void AMechaPawn::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	CurrentHealth = CoreMaxHealth;
 	SpringArm->CameraLagSpeed = CameraSmoothness;
 	SpringArm->CameraLagMaxDistance = MaxCameraLagDistance;
 	CurrentAcceleration = BaseAccelerationForce;
@@ -158,6 +159,7 @@ void AMechaPawn::Tick(float DeltaTime)
 	AnimateWheels(DeltaTime);
 }
 
+/* --- Movement Functions --- */
 void AMechaPawn::ApplyThrust(const FInputActionValue& Value)
 {
 	float FloatValue = Value.Get<float>();
@@ -213,6 +215,7 @@ void AMechaPawn::ApplyLateralFriction()
 	MechaMesh->AddImpulse(ImpulseToApply, NAME_None, true);
 }
 
+/* --- Scrap Management --- */
 void AMechaPawn::ActivateMagnet()
 {
 	TArray<FOverlapResult> Overlaps;
@@ -239,27 +242,48 @@ void AMechaPawn::ToggleMagnet()
 	bIsMagnetActive = !bIsMagnetActive;
 }
 
-/* --- Scrap Management --- */
-
 void AMechaPawn::AddScrap(int32 Amount)
 {
 	CurrentScraps += Amount;
 	OnScrapCountChanged.Broadcast(CurrentScraps);
-	CheckTierUpgrade();
+	CheckTier();
+}
+
+void AMechaPawn::RemoveScrap(int32 Amount)
+{
+	CurrentScraps -= Amount;
+	OnScrapCountChanged.Broadcast(CurrentScraps);
+	CheckTier();
 }
 
 /* --- Mass Tier Management --- */
-
-void AMechaPawn::CheckTierUpgrade()
+void AMechaPawn::CheckTier()
 {
-	for (const FMassTier& Tier : MassTiers)
+	FMassTier& HighestApplicableTier = MassTiers[0];
+	for (FMassTier& Tier : MassTiers)
 	{
-		if (Tier.ScrapThreshold != CurrentTier.ScrapThreshold && CurrentScraps >= Tier.ScrapThreshold)
+		if (CurrentScraps >= Tier.ScrapThreshold)
 		{
-			UpdateMassStats(Tier);
-			UpdateMassVisuals(Tier);
-			CurrentTier = Tier;
+			HighestApplicableTier = Tier;
 		}
+	}
+	
+	if (HighestApplicableTier.TierNumber != CurrentTier.TierNumber)
+	{
+		//We are upgrading or downgrading Tier
+		CurrentTier = HighestApplicableTier;
+		UpdateMassStats(CurrentTier);
+		UpdateMassVisuals(CurrentTier);
+		
+		int32 NextScrapThreshold = 0;
+		for (const FMassTier TierElement : MassTiers)
+		{
+			if (TierElement.TierNumber == CurrentTier.TierNumber + 1)
+			{
+				NextScrapThreshold = TierElement.ScrapThreshold;
+			}
+		}
+		OnTierChanged.Broadcast(CurrentTier.TierNumber, NextScrapThreshold);
 	}
 }
 
@@ -277,13 +301,30 @@ void AMechaPawn::UpdateMassVisuals(const FMassTier& Tier)
 {
 	for (UStaticMeshComponent* Mesh : MassMeshParts)
 	{
-		if (Mesh->ComponentHasTag(FName(FString::FromInt(Tier.TierNumber))))
+		//Find the Mesh Tier Tag (only a number)
+		int8 MeshTierTag = 0;
+		for (const FName& Tag : Mesh->ComponentTags)
+		{
+			if (Tag.ToString().IsNumeric())
+			{
+				MeshTierTag = FCString::Atoi(*Tag.ToString());
+				break;
+			}
+		}
+		
+		if (MeshTierTag == Tier.TierNumber)
 		{
 			Mesh->SetVisibility(true);
+		}
+		else if (MeshTierTag > Tier.TierNumber && Mesh->IsVisible())
+		{
+			//If we are downgrading, hide greater Tier meshes
+			Mesh->SetVisibility(false);
 		}
 	}
 }
 
+/* --- Weapon Management --- */
 void AMechaPawn::EquipWeapon(TSubclassOf<AActor> WeaponClass)
 {
 	OnWeaponAcquired.Broadcast(WeaponClass);
@@ -325,12 +366,48 @@ void AMechaPawn::AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSo
 	}
 }
 
+/* --- Vitality System --- */
 void AMechaPawn::TakeDamage(float Amount)
 {
 	UE_LOG(LogTemp, Warning, TEXT("MechaPawn Taking Damage: %f"), Amount);
-	//TODO: Implement Damage Logic
+	if (CurrentScraps > 0)
+	{
+		float const TotalScrapShieldAbsorption = CurrentScraps * ScrapShieldAbsorption;
+		if (TotalScrapShieldAbsorption >= Amount)
+		{
+			//Scraps absorb all damage, no core health damage
+			int32 const ScrapLost = FMath::CeilToInt(Amount / ScrapShieldAbsorption);
+			RemoveScrap(ScrapLost);
+			return;
+		}
+		else
+		{
+			//Scraps are lost and Mecha takes remaining damage
+			float const RemainingDamage = Amount - TotalScrapShieldAbsorption;
+			RemoveScrap(CurrentScraps);
+			CurrentHealth -= RemainingDamage;
+			OnHealthChanged.Broadcast(CurrentHealth);
+		}
+	}
+	else
+	{
+		//No Scraps to absorb damage, straight to core
+		CurrentHealth -= Amount;
+		OnHealthChanged.Broadcast(CurrentHealth);
+	}
+	
+	if (CurrentHealth <= 0)
+	{
+		Die();
+	}
 }
 
+void AMechaPawn::Die()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Game Over"));
+}
+
+/* Animation */
 void AMechaPawn::AnimateWheels(float DeltaTime)
 {
 	FVector const Velocity = MechaMesh->GetPhysicsLinearVelocity();

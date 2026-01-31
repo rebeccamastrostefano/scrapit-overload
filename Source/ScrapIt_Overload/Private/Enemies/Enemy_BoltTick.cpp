@@ -90,8 +90,11 @@ void AEnemy_BoltTick::ExecuteAttack()
 	FVector const AttackDirection = (MechaTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	MovementComp->Velocity = AttackDirection * AttackForce;
 	
-	CurrentState = EState::ES_Cooldown;
-	GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemy_BoltTick::ResetMovement, AttackCooldown, false);
+	GetWorldTimerManager().SetTimer(AttackTimer, [this]()
+	{
+		CurrentState = EState::ES_Cooldown;
+		GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemy_BoltTick::ResetMovement, AttackCooldown, false);
+	}, 0.2f, false);
 }
 
 void AEnemy_BoltTick::ResetMovement()
@@ -104,7 +107,7 @@ void AEnemy_BoltTick::OnHurtboxOverlap(UPrimitiveComponent* OverlappedComp, AAct
 	if (OtherActor != this && !OtherActor->Implements<UEnemy>())
 	{
 		IDamageable* const MechaDamageable = Cast<IDamageable>(OtherActor);
-		if (MechaDamageable)
+		if (MechaDamageable && CurrentState == EState::ES_Attacking)
 		{
 			MechaDamageable->TakeDamage(Damage);
 		}
@@ -117,8 +120,7 @@ void AEnemy_BoltTick::TakeDamage(float DamageAmount)
 	
 	if (CurrentHealth <= 0)
 	{
-		SpawnScrap();
-		Destroy();
+		Die();
 	}
 	else
 	{
@@ -133,6 +135,12 @@ void AEnemy_BoltTick::TakeDamage(float DamageAmount)
 			}, 0.1f, false);
 		
 	}
+}
+
+void AEnemy_BoltTick::Die()
+{
+	SpawnScrap();
+	Destroy();
 }
 
 void AEnemy_BoltTick::SpawnScrap()

@@ -19,4 +19,5 @@ class SCRAPIT_OVERLOAD_API IDamageable
 
 public:
 	virtual void TakeDamage(float DamageAmount) = 0;
+	virtual void Die() = 0;
 };

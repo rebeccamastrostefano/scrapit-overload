@@ -8,9 +8,6 @@
 #include "Interfaces/Damageable.h"
 #include "MechaPawn.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScrapCountChanged, int32, NewScrapCount);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponAcquired, TSubclassOf<AActor>, WeaponClass);
-
 USTRUCT(BlueprintType)
 struct FMassTier
 {
@@ -37,6 +34,11 @@ enum class EWeaponSocket : uint8
 	Left,
 	Right
 };
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScrapCountChanged, int32, NewScrapCount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponAcquired, TSubclassOf<AActor>, WeaponClass);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnTierChanged, int32, TierNumber, int32, NextTierThreshold);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float, Health);
 
 UCLASS()
 class SCRAPIT_OVERLOAD_API AMechaPawn : public APawn, public IDamageable
@@ -182,9 +184,17 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Mecha Mass Tiers")
 	FMassTier CurrentTier;
 	
-	void CheckTierUpgrade();
+	void CheckTier();
 	void UpdateMassStats(const FMassTier& Tier);
 	void UpdateMassVisuals(const FMassTier& Tier);
+	
+	//Damage and Death
+	float CurrentHealth = 100.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Mecha Stats")
+	float ScrapShieldAbsorption = 1.f; //If 1, 1 Damage = 1 Scrap Removed
+	
+	virtual void Die() override;
 	
 public:	
 	// Called every frame
@@ -195,6 +205,7 @@ public:
 	
 	//Scrap Management
 	void AddScrap(int32 Amount);
+	void RemoveScrap(int32 Amount);
 	
 	UFUNCTION(BlueprintPure, Category = "Mecha Stats")
 	int32 GetCurrentScrapCount() const
@@ -204,6 +215,10 @@ public:
 	
 	UPROPERTY(BlueprintAssignable, Category = "Mecha Stats")
 	FOnScrapCountChanged OnScrapCountChanged;
+	
+	//Tier
+	UPROPERTY(BlueprintAssignable, Category = "Mecha Stats")
+	FOnTierChanged OnTierChanged;
 	
 	//Weapons
 	void EquipWeapon(TSubclassOf<AActor> WeaponClass);
@@ -216,6 +231,13 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, Category = "Mecha Weapons")
 	TArray<AActor*> EquippedWeapons;
+	
+	//Damage and Death
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mecha Stats")
+	float CoreMaxHealth = 100.f;
+	
+	UPROPERTY(BlueprintAssignable, Category = "Mecha Stats")
+	FOnHealthChanged OnHealthChanged;
 	
 	void TakeDamage(float Amount);
 };

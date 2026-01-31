@@ -28,7 +28,6 @@ class SCRAPIT_OVERLOAD_API AEnemy_BoltTick : public APawn, public IDamageable, p
 public:
 	// Sets default values for this pawn's properties
 	AEnemy_BoltTick();
-	virtual void TakeDamage(float DamageAmount) override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -77,6 +76,7 @@ protected:
 	EState CurrentState = EState::ES_Chasing;
 	
 	void SpawnScrap();
+	void Die() override;
 	
 	//Attack
 	UFUNCTION()
@@ -90,5 +90,6 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	virtual void TakeDamage(float DamageAmount) override;
 
 };
