@@ -6,34 +6,8 @@
 #include "GameFramework/Pawn.h"
 #include "InputActionValue.h"
 #include "Interfaces/Damageable.h"
+#include "Core/PersistentManager.h"
 #include "MechaPawn.generated.h"
-
-USTRUCT(BlueprintType)
-struct FMassTier
-{
-	GENERATED_BODY()
-	
-	UPROPERTY(EditAnywhere)
-	int8 TierNumber;
-	
-	UPROPERTY(EditAnywhere)
-	int32 ScrapThreshold;
-	
-	UPROPERTY(EditAnywhere, meta = (UIMin = "0.1", ClampMin = "0.1", ClampMax = "1.0"))
-	float SpeedPenalty;
-	
-	UPROPERTY(EditAnywhere, meta = (UIMin = "0.1", ClampMin = "0.1", ClampMax = "1.0"))
-	float SteeringPenalty;
-};
-
-UENUM(BlueprintType)
-enum class EWeaponSocket : uint8
-{
-	Front,
-	Back,
-	Left,
-	Right
-};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScrapCountChanged, int32, NewScrapCount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponAcquired, TSubclassOf<AActor>, WeaponClass);
@@ -53,7 +27,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
-	// INPUT
+	/* --- INPUT --- */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputMappingContext* DefaultMappingContext;
 	
@@ -69,7 +43,7 @@ protected:
 	void ApplyThrust(const FInputActionValue& Value);
 	void ApplySteer(const FInputActionValue& Value);
 	
-	// COMPONENTS
+	/* --- COMPONENTS --- */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UStaticMeshComponent* MechaMesh;
 	
@@ -108,7 +82,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha Wheels")
 	UStaticMeshComponent* WheelBackRight;
 	
-	// MOVEMENT SETTINGS
+	/* --- MOVEMENT SETTINGS --- */
 	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
 	float BaseAccelerationForce = 400000.0f;
 	
@@ -135,64 +109,73 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
 	float MaxWheelAngle = 35.f;
 	
-	// CAMERA SETTINGS
+	/* --- CAMERA SETTINGS --- */
 	UPROPERTY(EditAnywhere, Category = "Mecha Camera")
 	float CameraSmoothness = 10.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Mecha Camera")
 	float MaxCameraLagDistance = 100.0f;
 	
-	// MAGNET SETTINGS
-	UPROPERTY(EditAnywhere, Category = "Mecha Magnet")
+	/* --- MECHA SETTINGS --- */
+	UPROPERTY(EditAnywhere, Category = "Mecha Settings")
 	float MagnetStrength = 2.0f;
 	
-	UPROPERTY(EditAnywhere, Category = "Mecha Magnet")
+	UPROPERTY(EditAnywhere, Category = "Mecha Settings")
 	float MagnetRadius = 50.0f;
 	
-	UPROPERTY(EditAnywhere, Category = "Mecha Magnet")
+	UPROPERTY(EditAnywhere, Category = "Mecha Settings")
 	float CollectionRadius = 150.0f;
 	
-	UPROPERTY(EditAnywhere, meta = (UIMin = "0.1", ClampMin = "0.1", ClampMax = "1.0"), Category = "Mecha Magnet")
+	UPROPERTY(EditAnywhere, meta = (UIMin = "0.1", ClampMin = "0.1", ClampMax = "1.0"), Category = "Mecha Settings")
 	float MagnetSpeedDecrease = 0.5f;
 	
-	bool bIsMagnetActive = false;
+	UPROPERTY(EditAnywhere, Category = "Mecha Settings")
+	TArray<FMassTier> MassTiers;
+	
+	UPROPERTY(VisibleAnywhere, Category = "Mecha Settings")
+	TArray<UStaticMeshComponent*> MassMeshParts;
+	
+	UPROPERTY(EditAnywhere, Category = "Mecha Settings")
+	float ScrapShieldAbsorption = 1.f; //If 1, 1 Damage = 1 Scrap Removed
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mecha Settings")
+	float CoreMaxHealth = 100.f;
 
-	// Movement Functions
+	bool bIsMagnetActive = false;
+	
+	/* --- Current Run State --- */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha State")
+	int32 CurrentScraps = 0;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha State")
+	float CurrentAcceleration = 0.0f;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha State")
+	float CurrentSteerSpeed = 0.0f;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha State")
+	FMassTier CurrentTier;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha State")
+	float CurrentHealth = 100.f;
+	
+	UPROPERTY(VisibleAnywhere, Category = "Mecha State")
+	TArray<FWeaponData> WeaponLoadout;
+	
+	/* --- Movement Functions --- */
 	void UpdateThrust(float Value);
 	void UpdateSteer(float DeltaTime);
 	void ApplyLateralFriction();
 	void AnimateWheels(float DeltaTime);
 	
-	//Magnet Functions
+	/* --- Magnet Functions --- */
 	void ActivateMagnet();
 	void ToggleMagnet();
 	
-	//Stats
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha Stats")
-	int32 CurrentScraps = 0;
-	
-	float CurrentAcceleration = 0.0f;
-	float CurrentSteerSpeed = 0.0f;
-	
-	//Tiers Management
-	UPROPERTY(EditAnywhere, Category = "Mecha Mass Tiers")
-	TArray<FMassTier> MassTiers;
-	
-	UPROPERTY(VisibleAnywhere, Category = "Mecha Mass Tiers")
-	TArray<UStaticMeshComponent*> MassMeshParts;
-	
-	UPROPERTY(VisibleAnywhere, Category = "Mecha Mass Tiers")
-	FMassTier CurrentTier;
-	
+	/* --- Tier Functions --- */
 	void CheckTier();
 	void UpdateMassStats(const FMassTier& Tier);
 	void UpdateMassVisuals(const FMassTier& Tier);
-	
-	//Damage and Death
-	float CurrentHealth = 100.f;
-	
-	UPROPERTY(EditAnywhere, Category = "Mecha Stats")
-	float ScrapShieldAbsorption = 1.f; //If 1, 1 Damage = 1 Scrap Removed
 	
 	virtual void Die() override;
 	
@@ -203,41 +186,53 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
-	//Scrap Management
+	//SETTERS
 	void AddScrap(int32 Amount);
 	void RemoveScrap(int32 Amount);
 	
-	UFUNCTION(BlueprintPure, Category = "Mecha Stats")
+	//GETTERS
+	UFUNCTION(BlueprintPure, Category = "Mecha State")
 	int32 GetCurrentScrapCount() const
 	{
 		return CurrentScraps;
 	}
 	
-	UPROPERTY(BlueprintAssignable, Category = "Mecha Stats")
+	UFUNCTION(BlueprintPure, Category = "Mecha State")
+	TArray<FWeaponData>& GetCurrentWeaponLoadout()
+	{
+		return WeaponLoadout;
+	}
+	
+	UFUNCTION(BlueprintPure, Category = "Mecha State")
+	float GetCurrentHealth() const
+	{
+		return CurrentHealth;
+	}
+
+	UFUNCTION(BlueprintPure, Category = "Mecha State")
+	FMassTier GetCurrentTier() const
+	{
+		return CurrentTier;
+	}
+	
+	//Events
+	UPROPERTY(BlueprintAssignable, Category = "Mecha State")
 	FOnScrapCountChanged OnScrapCountChanged;
 	
-	//Tier
-	UPROPERTY(BlueprintAssignable, Category = "Mecha Stats")
+	UPROPERTY(BlueprintAssignable, Category = "Mecha State")
 	FOnTierChanged OnTierChanged;
-	
-	//Weapons
-	void EquipWeapon(TSubclassOf<AActor> WeaponClass);
 	
 	UPROPERTY(BlueprintAssignable, Category = "Mecha Weapons")
 	FOnWeaponAcquired OnWeaponAcquired;
 	
-	UFUNCTION(BlueprintCallable, Category = "Mecha Weapons")
-	void AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSocket Socket);
-	
-	UPROPERTY(VisibleAnywhere, Category = "Mecha Weapons")
-	TArray<AActor*> EquippedWeapons;
-	
-	//Damage and Death
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mecha Stats")
-	float CoreMaxHealth = 100.f;
-	
 	UPROPERTY(BlueprintAssignable, Category = "Mecha Stats")
 	FOnHealthChanged OnHealthChanged;
 	
-	void TakeDamage(float Amount);
+	//Public Functions
+	void EquipWeapon(TSubclassOf<AActor> WeaponClass);
+	
+	UFUNCTION(BlueprintCallable, Category = "Mecha Weapons")
+	void AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSocket Socket);
+	
+	virtual void TakeDamage(float Amount) override;
 };

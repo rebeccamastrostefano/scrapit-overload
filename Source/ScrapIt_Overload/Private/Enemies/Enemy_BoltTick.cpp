@@ -5,8 +5,6 @@
 
 #include "MechaPawn.h"
 #include "GameFramework/FloatingPawnMovement.h"
-#include "Kismet/GameplayStatics.h"
-#include "Subsystems//GameManager.h"
 
 // Sets default values
 AEnemy_BoltTick::AEnemy_BoltTick()
@@ -32,7 +30,7 @@ void AEnemy_BoltTick::BeginPlay()
 	Super::BeginPlay();
 	
 	CurrentHealth = BaseHealth;
-	MechaTarget = UGameplayStatics::GetPlayerPawn(this, 0);
+	MechaTarget = GetWorld()->GetFirstPlayerController()->GetPawn();
 	HurtboxSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy_BoltTick::OnHurtboxOverlap);
 }
 
@@ -75,6 +73,10 @@ void AEnemy_BoltTick::Tick(float DeltaTime)
 			default: 
 				break;
 		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("NO PLAYER"))
 	}
 }
 
@@ -139,13 +141,12 @@ void AEnemy_BoltTick::TakeDamage(float DamageAmount)
 
 void AEnemy_BoltTick::Die()
 {
-	SpawnScrap();
+	OnDeath.ExecuteIfBound(GetActorLocation(), ScrapDrop);
 	Destroy();
 }
 
-void AEnemy_BoltTick::SpawnScrap()
+void AEnemy_BoltTick::RegisterToRoomManager(ARoomManager* RoomManager)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Spawning %d scraps"), ScrapDrop);
-	GetWorld()->GetSubsystem<UGameManager>()->SpawnRandomScrapsAtLocation(GetActorLocation(), ScrapDrop);
+	OnDeath.BindUObject(RoomManager, &ARoomManager::SpawnRandomScrapsAtLocation);
 }
 

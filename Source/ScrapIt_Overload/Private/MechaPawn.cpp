@@ -361,7 +361,7 @@ void AMechaPawn::AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSo
 		if (NewWeapon)
 		{
 			NewWeapon->AttachToComponent(AttachSocket, FAttachmentTransformRules::KeepWorldTransform);
-			EquippedWeapons.Add(NewWeapon);
+			WeaponLoadout.Add(FWeaponData{WeaponClass, 1, Socket});
 		}
 	}
 }

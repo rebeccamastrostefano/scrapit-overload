@@ -4,7 +4,6 @@
 #include "Scraps/ScrapActor.h"
 #include "Kismet/GameplayStatics.h"
 #include "MechaPawn.h"
-#include "Core/WeaponSubsystem.h"
 
 // Sets default values
 AScrapActor::AScrapActor()
@@ -120,24 +119,25 @@ void AScrapActor::OnCollected()
             	Destroy();
             	break;	
 			}
-		default:
-			//If it's a weapon scrap type, equip it to the mecha
+		case EScrapType::Weapon:
 			{
+				//If it's a weapon scrap type, equip it to the mecha
 				APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
                 			
                 if (AMechaPawn* Mecha = Cast<AMechaPawn>(PlayerPawn))
                 {
-                	if (UWeaponSubsystem* WeaponSS = GetGameInstance()->GetSubsystem<UWeaponSubsystem>())
+                	if (WeaponBP)
                 	{
-                		if (const TSubclassOf<AActor> WeaponBP = WeaponSS->GetWeaponBlueprint(ScrapType))
-                		{
-                			Mecha->EquipWeapon(WeaponBP);
-                		}
+                		Mecha->EquipWeapon(WeaponBP);
                 	}
                 }
-				Destroy();
+				break;
+			}
+		default:
+			{
                 break;
 			}
 	}
+	Destroy();
 }
 

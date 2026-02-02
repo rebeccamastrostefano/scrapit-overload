@@ -73,10 +73,11 @@ protected:
 	UPROPERTY()
 	APawn* MechaTarget;
 	
+	UPROPERTY(VisibleAnywhere)
 	EState CurrentState = EState::ES_Chasing;
 	
-	void SpawnScrap();
 	void Die() override;
+	FOnEnemyDeath OnDeath;
 	
 	//Attack
 	UFUNCTION()
@@ -91,5 +92,5 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	virtual void TakeDamage(float DamageAmount) override;
-
+	virtual void RegisterToRoomManager(ARoomManager* RoomManager) override;
 };

@@ -19,7 +19,7 @@ UENUM(BlueprintType)
 enum class EScrapType : uint8
 {
 	Basic,
-	Weapon_Screws,
+	Weapon,
 };
 
 UCLASS()
@@ -45,6 +45,9 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
 	EScrapType ScrapType = EScrapType::Basic;
+	
+	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
+	TSubclassOf<AActor> WeaponBP = nullptr;
 	
 	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
 	float BasePullSpeed = 100.0f;

@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
+#include "Rooms/RoomManager.h"
 #include "Enemy.generated.h"
+
+DECLARE_DELEGATE_TwoParams(FOnEnemyDeath, FVector, int32);
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
@@ -24,4 +27,5 @@ public:
 	float BaseHealth;
 	float Damage;
 	int32 ScrapDrop;
+	virtual void RegisterToRoomManager(ARoomManager* RoomManager) = 0;
 };
