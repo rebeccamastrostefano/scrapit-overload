@@ -7,3 +7,8 @@ void UPersistentManager::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 }
+
+void UPersistentManager::Deinitialize()
+{
+	Super::Deinitialize();
+}

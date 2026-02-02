@@ -131,6 +131,9 @@ void AMechaPawn::BeginPlay()
 			Mesh->SetVisibility(false);
 		}
 	}
+	
+	//Load saved Mecha State from Persistent Manager
+	LoadMechaState();
 }
 
 // Called to bind functionality to input
@@ -245,15 +248,15 @@ void AMechaPawn::ToggleMagnet()
 void AMechaPawn::AddScrap(int32 Amount)
 {
 	CurrentScraps += Amount;
-	OnScrapCountChanged.Broadcast(CurrentScraps);
 	CheckTier();
+	OnScrapCountChanged.Broadcast(CurrentScraps);
 }
 
 void AMechaPawn::RemoveScrap(int32 Amount)
 {
 	CurrentScraps -= Amount;
-	OnScrapCountChanged.Broadcast(CurrentScraps);
 	CheckTier();
+	OnScrapCountChanged.Broadcast(CurrentScraps);
 }
 
 /* --- Mass Tier Management --- */
@@ -275,6 +278,7 @@ void AMechaPawn::CheckTier()
 		UpdateMassStats(CurrentTier);
 		UpdateMassVisuals(CurrentTier);
 		
+		//Get the next tier scrap threshold to update UI
 		int32 NextScrapThreshold = 0;
 		for (const FMassTier TierElement : MassTiers)
 		{
@@ -312,14 +316,45 @@ void AMechaPawn::UpdateMassVisuals(const FMassTier& Tier)
 			}
 		}
 		
-		if (MeshTierTag == Tier.TierNumber)
+		if (MeshTierTag <= Tier.TierNumber)
 		{
+			//Show mesh if its Tier number is less or equal than current Tier
 			Mesh->SetVisibility(true);
 		}
-		else if (MeshTierTag > Tier.TierNumber && Mesh->IsVisible())
+		else if (MeshTierTag > Tier.TierNumber)
 		{
 			//If we are downgrading, hide greater Tier meshes
 			Mesh->SetVisibility(false);
+		}
+	}
+}
+
+void AMechaPawn::LoadMechaState()
+{
+	if (const UPersistentManager* PM = GetGameInstance()->GetSubsystem<UPersistentManager>())
+	{
+		//Get the saved mecha state and apply loads
+		FMechaRunState MechaState = PM->GetMechaState();
+		
+		if (MechaState.CurrentHealth > 0)
+		{
+			CurrentHealth = MechaState.CurrentHealth;
+			OnHealthChanged.Broadcast(CurrentHealth);
+		}
+		
+		if (MechaState.CurrentScraps > 0)
+		{
+			CurrentScraps = MechaState.CurrentScraps;
+			CheckTier();
+			OnScrapCountChanged.Broadcast(CurrentScraps);
+		}
+		
+		for (const FWeaponData& WeaponData : MechaState.WeaponLoadout)
+		{
+			if (WeaponData.WeaponClass)
+			{
+				AttachWeaponToSocket(WeaponData.WeaponClass, WeaponData.Socket);
+			}
 		}
 	}
 }
@@ -332,7 +367,7 @@ void AMechaPawn::EquipWeapon(TSubclassOf<AActor> WeaponClass)
 
 void AMechaPawn::AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSocket Socket)
 {
-	USceneComponent* AttachSocket = nullptr;
+	USceneComponent* AttachSocket;
 	switch(Socket)
 	{
 		case EWeaponSocket::Front:
@@ -356,9 +391,8 @@ void AMechaPawn::AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSo
 		//Spawn weapon and attach to socket
 		FActorSpawnParameters SpawnInfo;
 		SpawnInfo.Owner = this;
-		AActor* NewWeapon = GetWorld()->SpawnActor<AActor>(WeaponClass, AttachSocket->GetComponentTransform(), SpawnInfo);
 		
-		if (NewWeapon)
+		if (AActor* NewWeapon = GetWorld()->SpawnActor<AActor>(WeaponClass, AttachSocket->GetComponentTransform(), SpawnInfo))
 		{
 			NewWeapon->AttachToComponent(AttachSocket, FAttachmentTransformRules::KeepWorldTransform);
 			WeaponLoadout.Add(FWeaponData{WeaponClass, 1, Socket});
@@ -404,6 +438,7 @@ void AMechaPawn::TakeDamage(float Amount)
 
 void AMechaPawn::Die()
 {
+	//TODO: Death
 	UE_LOG(LogTemp, Warning, TEXT("Game Over"));
 }
 

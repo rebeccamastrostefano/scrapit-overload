@@ -21,8 +21,11 @@ void ARoomManager::BeginPlay()
 	
 	if (UPersistentManager* PM = GetGameInstance()->GetSubsystem<UPersistentManager>())
 	{
-		int32 RoomRank = PM->GetRoomRank();
-		ActiveEnemyPool = RankToEnemyPool.Contains(RoomRank) ? RankToEnemyPool[RoomRank] : nullptr;
+		if (UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance()))
+		{
+			const int32 RoomRank = PM->GetRoomRank();
+			ActiveEnemyPool = GI->GetEnemyPool(RoomRank);
+		}
 	}
 	
 	GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &ARoomManager::SpawnCycle, 2.f, true);

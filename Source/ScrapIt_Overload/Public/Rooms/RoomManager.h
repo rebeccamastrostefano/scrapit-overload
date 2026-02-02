@@ -8,7 +8,7 @@
 #include "RoomManager.generated.h"
 
 UENUM(BlueprintType)
-enum class ERoomObjective : uint8
+enum class ERoomType : uint8
 {
 	Survive,
 	KillAmount
@@ -29,7 +29,7 @@ protected:
 	
 	//Room Config
 	UPROPERTY(EditAnywhere, Category = "Room Configuration")
-	ERoomObjective RoomObjective;
+	ERoomType RoomType;
 	
 	UPROPERTY(EditAnywhere, Category = "Room Configuration")
 	float ObjectiveTarget = 60.f; //Can be seconds or kill amount
@@ -39,9 +39,6 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = "Room Configuration")
 	float MaxSpawnDistance = 2500.f;
-	
-	UPROPERTY(EditAnywhere, Category = "Room Configuration")
-	TMap<int32, UEnemyPool*> RankToEnemyPool;
 	
 	//Functions
 	void SpawnCycle();

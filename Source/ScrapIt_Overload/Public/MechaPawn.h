@@ -162,6 +162,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Mecha State")
 	TArray<FWeaponData> WeaponLoadout;
 	
+	void LoadMechaState();
+	
 	/* --- Movement Functions --- */
 	void UpdateThrust(float Value);
 	void UpdateSteer(float DeltaTime);

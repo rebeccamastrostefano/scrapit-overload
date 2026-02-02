@@ -57,7 +57,7 @@ struct FMechaRunState
 	int CurrentScraps = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mecha Data")
-	int32 CurrentTier = 0;
+	float CurrentHealth = 0;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mecha Data")
 	TArray<FWeaponData> WeaponLoadout;
@@ -80,6 +80,7 @@ protected:
 	
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Deinitialize() override;
 	
 	//GETTERS
 	UFUNCTION(BlueprintPure, Category = "Run Data")
@@ -90,10 +91,10 @@ public:
 	
 	//SETTERS
 	UFUNCTION(BlueprintCallable, Category = "Run Data")
-	void SaveMechaState(float Scraps, int32 Tier, const TArray<FWeaponData>& Weapons)
+	void SaveMechaState(const float Scraps, const float Health, const TArray<FWeaponData>& Weapons)
 	{
 		CurrentMechaState.CurrentScraps = Scraps;
-		CurrentMechaState.CurrentTier = Tier;
+		CurrentMechaState.CurrentHealth = Health;
 		CurrentMechaState.WeaponLoadout = Weapons;
 	}
 	
