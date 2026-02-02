@@ -119,7 +119,7 @@ void AScrapActor::OnCollected()
             	Destroy();
             	break;	
 			}
-		case EScrapType::Weapon:
+		default:
 			{
 				//If it's a weapon scrap type, equip it to the mecha
 				APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
@@ -132,10 +132,6 @@ void AScrapActor::OnCollected()
                 	}
                 }
 				break;
-			}
-		default:
-			{
-                break;
 			}
 	}
 	Destroy();

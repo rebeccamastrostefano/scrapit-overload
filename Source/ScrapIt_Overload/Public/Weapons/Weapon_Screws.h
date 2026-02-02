@@ -3,12 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Interfaces/Weapon.h"
+#include "WeaponBase.h"
 #include "GameFramework/Actor.h"
 #include "Weapon_Screws.generated.h"
 
 UCLASS()
-class SCRAPIT_OVERLOAD_API AWeapon_Screws : public AActor, public IWeapon
+class SCRAPIT_OVERLOAD_API AWeapon_Screws : public AWeaponBase
 {
 	GENERATED_BODY()
 	
@@ -29,13 +29,7 @@ protected:
 	UFUNCTION()
 	void OverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
-	float BaseDamage;
-	
-	float CurrentDamage;
-
+	virtual void Fire() override;
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 
 };

@@ -19,7 +19,8 @@ UENUM(BlueprintType)
 enum class EScrapType : uint8
 {
 	Basic,
-	Weapon,
+	W_Screws,
+	W_NailGun,
 };
 
 UCLASS()

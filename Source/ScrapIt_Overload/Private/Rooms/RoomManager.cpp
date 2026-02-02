@@ -145,7 +145,7 @@ void ARoomManager::SpawnRandomScrapsAtLocation(FVector Location, int32 Amount)
 	}
 	
 
-	TSubclassOf<AActor> const BasicScrapBlueprint = GI->BasicScrapBP;
+	TSubclassOf<AActor> const BasicScrapBlueprint = GI->ScrapTypeToBP[EScrapType::Basic];
 	if (!BasicScrapBlueprint)
 	{
 		UE_LOG(LogTemp, Error, TEXT("ScrapSubsystem: Missing Scrap Blueprint"));

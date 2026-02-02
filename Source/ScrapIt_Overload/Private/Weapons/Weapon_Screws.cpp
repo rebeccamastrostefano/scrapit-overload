@@ -24,15 +24,7 @@ void AWeapon_Screws::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	CurrentDamage = BaseDamage;
 	HitboxCollider->OnComponentBeginOverlap.AddDynamic(this, &AWeapon_Screws::OverlapBegin);
-}
-
-// Called every frame
-void AWeapon_Screws::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
 }
 
 void AWeapon_Screws::OverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -44,7 +36,12 @@ void AWeapon_Screws::OverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* O
 	
 	if (IDamageable* Target = Cast<IDamageable>(OtherActor))
 	{
-		Target->TakeDamage(CurrentDamage);
+		Target->TakeDamage(Damage);
 	}
+}
+
+void AWeapon_Screws::Fire()
+{
+	//Screws don't fire, empty override
 }
 

@@ -162,6 +162,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Mecha State")
 	TArray<FWeaponData> WeaponLoadout;
 	
+	TMap<EWeaponSocket, AActor*> SocketsToWeapons;
+	
 	void LoadMechaState();
 	
 	/* --- Movement Functions --- */
@@ -215,6 +217,20 @@ public:
 	FMassTier GetCurrentTier() const
 	{
 		return CurrentTier;
+	}
+	
+	UFUNCTION(BlueprintPure, Category = "Mecha State")
+	TArray<EWeaponSocket> GetAvailableSockets() const
+	{
+		TArray<EWeaponSocket> AvailableSockets = { EWeaponSocket::Front, EWeaponSocket::Back, EWeaponSocket::Left, EWeaponSocket::Right };
+		TArray<EWeaponSocket> NotAvailable;
+		SocketsToWeapons.GetKeys(NotAvailable);
+		
+		for (EWeaponSocket Socket : NotAvailable)
+		{
+			AvailableSockets.Remove(Socket);
+		}
+		return AvailableSockets;
 	}
 	
 	//Events

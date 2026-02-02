@@ -9,6 +9,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Interfaces/Scrappable.h"
 #include "Components/BoxComponent.h"
+#include "Core/ScrapItGameInstance.h"
 #include "Engine/OverlapResult.h"
 
 // Sets default values
@@ -388,6 +389,37 @@ void AMechaPawn::AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSo
 	
 	if (WeaponClass && AttachSocket)
 	{
+		//If we are equipping a weapon on an occupied socket, swap it
+		if (SocketsToWeapons.Contains(Socket))
+		{
+			UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance());
+			if (GI)
+			{
+				//Get the old weapon class to drop as scrap
+				TSubclassOf<AScrapActor> OldWeaponScrapClass = nullptr;
+				for (const FWeaponData& Data : WeaponLoadout)
+				{
+					if (Data.Socket == Socket)
+					{
+						OldWeaponScrapClass = GI->WeaponClassToScrapBP[Data.WeaponClass];
+						break;
+					}
+				}
+				
+				//Destroy the old weapon actor
+				SocketsToWeapons[Socket]->Destroy();
+				
+				//Remove the swapped weapon from loadout
+				WeaponLoadout.RemoveAll([&](const FWeaponData& Data) { return Data.Socket == Socket; });
+				
+				//Drop the old weapon on ground as scrap
+				if (OldWeaponScrapClass)
+				{
+					GetWorld()->SpawnActor<AActor>(OldWeaponScrapClass, GetActorTransform());
+				}
+			}
+		}
+		
 		//Spawn weapon and attach to socket
 		FActorSpawnParameters SpawnInfo;
 		SpawnInfo.Owner = this;
@@ -396,6 +428,7 @@ void AMechaPawn::AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSo
 		{
 			NewWeapon->AttachToComponent(AttachSocket, FAttachmentTransformRules::KeepWorldTransform);
 			WeaponLoadout.Add(FWeaponData{WeaponClass, 1, Socket});
+			SocketsToWeapons.Add(Socket, NewWeapon);
 		}
 	}
 }

@@ -1,0 +1,42 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "WeaponBase.generated.h"
+
+UCLASS()
+class SCRAPIT_OVERLOAD_API AWeaponBase : public AActor
+{
+	GENERATED_BODY()
+	
+public:	
+	// Sets default values for this actor's properties
+	AWeaponBase();
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+	
+	UPROPERTY(EditAnywhere, Category = "Weapon Settings")
+	float Damage = 10.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Weapon Settings")
+	float FireRate = 0.5f;
+	
+	UPROPERTY(EditAnywhere, Category = "Weapon Settings")
+	float Range = 800.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Weapon Settings")
+	float FireConeThreshold = 0.7f;
+	
+	FTimerHandle FireTimer;
+	
+	AActor* FindNearestEnemy() const;
+	
+	virtual void Fire() PURE_VIRTUAL(AWeaponBase::Fire);
+
+public:	
+
+};

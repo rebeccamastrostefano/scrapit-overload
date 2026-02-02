@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Rooms/EnemyPool.h"
 #include "Engine/GameInstance.h"
+#include "Scraps/ScrapActor.h"
 #include "ScrapItGameInstance.generated.h"
 
 /**
@@ -17,10 +18,10 @@ class SCRAPIT_OVERLOAD_API UScrapItGameInstance : public UGameInstance
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Global References")
-	TSubclassOf<AActor> BasicScrapBP;
+	TMap<EScrapType, TSubclassOf<AScrapActor>> ScrapTypeToBP;
 	
 	UPROPERTY(EditAnywhere, Category = "Global References")
-	TSubclassOf<AActor> GoldenScrapBP;
+	TMap<TSubclassOf<AActor>, TSubclassOf<AScrapActor>> WeaponClassToScrapBP;
 	
 	UPROPERTY(EditAnywhere, Category = "Global References")
 	TMap<int32, UEnemyPool*> RankToEnemyPool;
