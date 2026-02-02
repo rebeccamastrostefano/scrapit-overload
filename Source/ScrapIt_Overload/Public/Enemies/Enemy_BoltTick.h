@@ -76,7 +76,9 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	EState CurrentState = EState::ES_Chasing;
 	
-	void Die() override;
+	UFUNCTION()
+	virtual void Die() override;
+	
 	FOnEnemyDeath OnDeath;
 	
 	//Attack

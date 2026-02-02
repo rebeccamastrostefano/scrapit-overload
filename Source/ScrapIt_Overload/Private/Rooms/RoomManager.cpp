@@ -89,6 +89,44 @@ void ARoomManager::RegisterEnemy(AActor* Enemy)
 	}
 }
 
+//Objective Management
+void ARoomManager::OnEnemyDeath(FVector Location, int32 ScrapsToSpawn)
+{
+	if (RoomType == ERoomType::KillAmount)
+	{
+		CurrentObjectiveProgress++;
+		if (CurrentObjectiveProgress >= ObjectiveTarget && RoomState != ERoomState::Completed)
+		{
+			CompleteRoom();
+		}
+	}
+	SpawnRandomScrapsAtLocation(Location, ScrapsToSpawn);
+}
+
+void ARoomManager::CompleteRoom()
+{
+	RoomState = ERoomState::Completed;
+	OnRoomCompleted.Broadcast();
+	GetWorldTimerManager().ClearTimer(SpawnTimerHandle);
+	
+	const UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance());
+	
+	if (const TSubclassOf<AActor> DoorBP = GI->DoorBP)
+	{
+		//Spawn the three doors at the correct positions
+		float DoorOffset = -500.f;
+		for (int32 i = 0; i < 3; i++)
+		{
+			FVector SpawnLoc = FVector(GetActorLocation().X, DoorOffset, GetActorLocation().Z);
+			if (GetWorld()->SpawnActor<AActor>(DoorBP, SpawnLoc, FRotator::ZeroRotator))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Spawning door at %s"), *SpawnLoc.ToString());
+			}
+			DoorOffset += 500.f;
+		}
+	}
+}
+
 //Scrap Spawning
 void ARoomManager::SpawnRandomScrapsAtLocation(FVector Location, int32 Amount)
 {
@@ -99,7 +137,7 @@ void ARoomManager::SpawnRandomScrapsAtLocation(FVector Location, int32 Amount)
 		return;
 	}
 	
-	UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance());
+	const UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance());
 	if (!GI)
 	{
 		UE_LOG(LogTemp, Error, TEXT("RoomManager: GameInstance is NOT UScrapItGameInstance!"));

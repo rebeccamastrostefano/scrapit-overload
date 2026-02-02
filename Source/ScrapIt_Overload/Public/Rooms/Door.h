@@ -21,6 +21,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
+	//TODO: Randomize door type
+	
 	UPROPERTY(VisibleAnywhere)
 	USphereComponent* CollisionSphere;
 	

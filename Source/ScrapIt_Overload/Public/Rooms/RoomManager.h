@@ -14,6 +14,15 @@ enum class ERoomType : uint8
 	KillAmount
 };
 
+UENUM(BlueprintType)
+enum class ERoomState : uint8
+{
+	Active,
+	Completed,
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnRoomCompleted);
+
 UCLASS()
 class SCRAPIT_OVERLOAD_API ARoomManager : public AActor
 {
@@ -44,11 +53,17 @@ protected:
 	void SpawnCycle();
 	FVector GetRandomSpawnPoint();
 	void RegisterEnemy(AActor* Enemy);
+	void SpawnRandomScrapsAtLocation(FVector Location, int32 Amount);
+	void CompleteRoom();
 	
 	//Data
+	UPROPERTY(VisibleAnywhere, Category = "Room State")
+	ERoomState RoomState = ERoomState::Active;
+	
 	UPROPERTY()
 	UEnemyPool* ActiveEnemyPool;
 	
+	float CurrentObjectiveProgress = 0.f;
 	FTimerHandle SpawnTimerHandle;
 	
 
@@ -56,7 +71,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	//Scraps handling
+	//Objectives handling
 	UFUNCTION()
-	void SpawnRandomScrapsAtLocation(FVector Location, int32 Amount);
+	void OnEnemyDeath(FVector Location, int32 ScrapsToSpawn);
+	
+	//Events
+	FOnRoomCompleted OnRoomCompleted;
 };

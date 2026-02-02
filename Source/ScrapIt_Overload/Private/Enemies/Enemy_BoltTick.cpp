@@ -147,6 +147,7 @@ void AEnemy_BoltTick::Die()
 
 void AEnemy_BoltTick::RegisterToRoomManager(ARoomManager* RoomManager)
 {
-	OnDeath.BindUObject(RoomManager, &ARoomManager::SpawnRandomScrapsAtLocation);
+	OnDeath.BindUObject(RoomManager, &ARoomManager::OnEnemyDeath);
+	RoomManager->OnRoomCompleted.AddDynamic(this, &AEnemy_BoltTick::Die);
 }
 

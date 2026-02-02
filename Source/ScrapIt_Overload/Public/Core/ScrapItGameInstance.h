@@ -30,4 +30,7 @@ public:
 	{
 		return RankToEnemyPool.Contains(Rank) ? RankToEnemyPool[Rank] : nullptr;
 	}
+	
+	UPROPERTY(EditAnywhere, Category = "Global References")
+	TSubclassOf<AActor> DoorBP;
 };
