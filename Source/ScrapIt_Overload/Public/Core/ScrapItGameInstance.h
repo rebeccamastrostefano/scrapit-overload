@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Rooms/EnemyPool.h"
 #include "Engine/GameInstance.h"
+#include "Rooms/RoomPool.h"
 #include "Scraps/ScrapActor.h"
 #include "ScrapItGameInstance.generated.h"
 
@@ -25,6 +26,12 @@ public:
 	
 	UPROPERTY(EditAnywhere, Category = "Global References")
 	TMap<int32, UEnemyPool*> RankToEnemyPool;
+	
+	UPROPERTY(EditAnywhere, Category = "Global References")
+	URoomPool* RoomPool;
+	
+	UPROPERTY(EditAnywhere, Category = "Global References")
+	TMap<ERoomType, TSoftObjectPtr<UWorld>> RoomLevels;
 	
 	UFUNCTION()
 	UEnemyPool* GetEnemyPool(const int32 Rank)

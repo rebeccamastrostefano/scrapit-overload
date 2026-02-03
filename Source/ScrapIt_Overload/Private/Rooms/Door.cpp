@@ -2,8 +2,8 @@
 
 
 #include "Rooms/Door.h"
-
 #include "MechaPawn.h"
+#include "Core/ScrapItGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -24,11 +24,9 @@ void ADoor::BeginPlay()
 	CollisionSphere->OnComponentBeginOverlap.AddDynamic(this, &ADoor::OnDoorOverlap);
 }
 
-// Called every frame
-void ADoor::Tick(float DeltaTime)
+void ADoor::SetRoomType(ERoomType NewRoomType)
 {
-	Super::Tick(DeltaTime);
-
+	NextRoomType = NewRoomType;
 }
 
 void ADoor::OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -38,6 +36,7 @@ void ADoor::OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActo
 		UPersistentManager* PM = GetGameInstance()->GetSubsystem<UPersistentManager>();
 		if (PM)
 		{
+			//Save the Player's state before progressing
 			PM->SaveMechaState(
 				MechaPawn->GetCurrentScrapCount(),
 				MechaPawn->GetCurrentHealth(),
@@ -45,8 +44,18 @@ void ADoor::OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActo
 				);
 			PM->AdvanceRoom();
 			
-			const FName NextLevelName = UEnum::GetValueAsName(NextRoomType);
-			UGameplayStatics::OpenLevel(this, NextLevelName);
+			if (UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance()))
+			{
+				// Get the Level Pointer from the Map
+				if (TSoftObjectPtr<UWorld> LevelPtr = GI->RoomLevels.FindRef(NextRoomType))
+				{
+					UGameplayStatics::OpenLevelBySoftObjectPtr(this, LevelPtr);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("No Level assigned for Room Type: %d"), (int32)NextRoomType);
+				}
+			}
 		}
 	}
 }

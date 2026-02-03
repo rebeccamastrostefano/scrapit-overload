@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Rooms/RoomManager.h"
+#include "Rooms/Door.h"
 #include "Scraps/ScrapActor.h"
 #include "Interfaces/Enemy.h"
 #include "Core/PersistentManager.h"
@@ -18,44 +19,67 @@ ARoomManager::ARoomManager()
 void ARoomManager::BeginPlay()
 {
 	Super::BeginPlay();
+	EnemiesToSpawn = BaseEnemyCount;
 	
 	if (UPersistentManager* PM = GetGameInstance()->GetSubsystem<UPersistentManager>())
 	{
 		if (UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance()))
 		{
-			const int32 RoomRank = PM->GetRoomRank();
-			ActiveEnemyPool = GI->GetEnemyPool(RoomRank);
+			CurrentRoomRank = PM->GetRoomRank();
+			ActiveEnemyPool = GI->GetEnemyPool(CurrentRoomRank);
 		}
 	}
 	
-	GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &ARoomManager::SpawnCycle, 2.f, true);
+	if (RoomType == ERoomType::Standard)
+	{
+		ApplyRoomModifiers();
+		SpawnEnemies();
+	}
 }
 
-// Called every frame
-void ARoomManager::Tick(float DeltaTime)
+void ARoomManager::ApplyRoomModifiers()
 {
-	Super::Tick(DeltaTime);
-
+	//The higher the room rank, the higher the chance to get a modifier (impossible on first two ranks)
+	if (FMath::RandRange(40, 180) < (20 * CurrentRoomRank))
+	{
+		const ERoomModifiers Modifier = static_cast<ERoomModifiers>(FMath::RandRange(0, COUNT - 1));
+		switch (Modifier)
+		{
+		case EnemyBoost:
+			//More enemies
+			EnemiesToSpawn *= CurrentRoomRank;
+			break;
+		case OilHazard:
+			//TODO: Spawn oil puddles
+			break;
+		default:
+			break;
+		}
+	}
 }
 
 //Enemy Spawning
-void ARoomManager::SpawnCycle()
+void ARoomManager::SpawnEnemies()
 {
 	if (!ActiveEnemyPool || ActiveEnemyPool->Enemies.Num() == 0)
 	{
 		return;
 	}
 	
-	FEnemyDetails EnemyDetails = ActiveEnemyPool->GetRandomEnemyBasedOnChance();
-	FVector SpawnLocation = GetRandomSpawnPoint();
-	
-	for (int32 i = 0; i < EnemyDetails.ClusterCount; i++)
+	for (int32 i = 0; i < EnemiesToSpawn; i++)
 	{
-		FVector SpawnLoc = SpawnLocation + (FMath::VRand() * 100.f);
-		SpawnLoc.Z = 100.f;
+		FEnemyDetails EnemyDetails = ActiveEnemyPool->GetRandomEnemyBasedOnChance();
+		FVector SpawnLocation = GetRandomSpawnPoint();
 		
-		AActor* Enemy = GetWorld()->SpawnActor<AActor>(EnemyDetails.EnemyClass, SpawnLoc, FRotator::ZeroRotator);
-		RegisterEnemy(Enemy);
+		for (int32 e = 0; e < EnemyDetails.ClusterCount; e++)
+		{
+			FVector SpawnLoc = SpawnLocation + (FMath::VRand() * 100.f);
+			SpawnLoc.Z = 100.f;
+			
+			AActor* Enemy = GetWorld()->SpawnActor<AActor>(EnemyDetails.EnemyClass, SpawnLoc, FRotator::ZeroRotator);
+			RegisterEnemy(Enemy);
+			EnemyCount++;
+		}
 	}
 }
 
@@ -92,10 +116,10 @@ void ARoomManager::RegisterEnemy(AActor* Enemy)
 //Objective Management
 void ARoomManager::OnEnemyDeath(FVector Location, int32 ScrapsToSpawn)
 {
-	if (RoomType == ERoomType::KillAmount)
+	if (RoomType == ERoomType::Standard)
 	{
-		CurrentObjectiveProgress++;
-		if (CurrentObjectiveProgress >= ObjectiveTarget && RoomState != ERoomState::Completed)
+		EnemyCount--;
+		if (EnemyCount <= 0 && RoomState != ERoomState::Completed)
 		{
 			CompleteRoom();
 		}
@@ -118,8 +142,9 @@ void ARoomManager::CompleteRoom()
 		for (int32 i = 0; i < 3; i++)
 		{
 			FVector SpawnLoc = FVector(GetActorLocation().X, DoorOffset, GetActorLocation().Z);
-			if (GetWorld()->SpawnActor<AActor>(DoorBP, SpawnLoc, FRotator::ZeroRotator))
+			if (ADoor* Door = Cast<ADoor>(GetWorld()->SpawnActor<AActor>(DoorBP, SpawnLoc, FRotator::ZeroRotator)))
 			{
+				Door->SetRoomType(GetRandomRoomType());
 				UE_LOG(LogTemp, Warning, TEXT("Spawning door at %s"), *SpawnLoc.ToString());
 			}
 			DoorOffset += 500.f;
@@ -181,6 +206,33 @@ void ARoomManager::SpawnRandomScrapsAtLocation(FVector Location, int32 Amount)
 			}
 		}
 	}
-	
+}
+
+ERoomType ARoomManager::GetRandomRoomType()
+{
+	if (UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance()))
+	{
+		if (GI->RoomPool && GI->RoomPool->Rooms.Num() > 0)
+		{
+			float TotalWeight = 0.f;
+			for (const auto& Room : GI->RoomPool->Rooms)
+			{
+				TotalWeight += Room.Weight;
+			}
+			
+			const float RandomValue = FMath::RandRange(0.f, TotalWeight);
+			float WeightSum = 0.f;
+			
+			for (const auto& Room : GI->RoomPool->Rooms)
+			{
+				WeightSum += Room.Weight;
+				if (RandomValue <= WeightSum)
+				{
+					return Room.Room;
+				}
+			}
+		}
+	}
+	return ERoomType::Standard;
 }
 

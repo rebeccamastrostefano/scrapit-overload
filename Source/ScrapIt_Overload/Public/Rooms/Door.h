@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "RoomManager.h"
+#include "RoomPool.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/Actor.h"
 #include "Door.generated.h"
@@ -21,8 +21,6 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
-	//TODO: Randomize door type
-	
 	UPROPERTY(VisibleAnywhere)
 	USphereComponent* CollisionSphere;
 	
@@ -33,7 +31,6 @@ protected:
 	void OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	void SetRoomType(ERoomType NewRoomType);
 
 };

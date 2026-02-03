@@ -5,13 +5,15 @@
 #include "CoreMinimal.h"
 #include "EnemyPool.h"
 #include "GameFramework/Actor.h"
+#include "RoomPool.h"
 #include "RoomManager.generated.h"
 
-UENUM(BlueprintType)
-enum class ERoomType : uint8
+UENUM()
+enum ERoomModifiers : uint8
 {
-	Survive,
-	KillAmount
+	EnemyBoost,
+	OilHazard,
+	COUNT
 };
 
 UENUM(BlueprintType)
@@ -41,7 +43,7 @@ protected:
 	ERoomType RoomType;
 	
 	UPROPERTY(EditAnywhere, Category = "Room Configuration")
-	float ObjectiveTarget = 60.f; //Can be seconds or kill amount
+	int32 BaseEnemyCount = 5;
 	
 	UPROPERTY(EditAnywhere, Category = "Room Configuration")
 	float MinSpawnDistance = 1500.f;
@@ -50,27 +52,30 @@ protected:
 	float MaxSpawnDistance = 2500.f;
 	
 	//Functions
-	void SpawnCycle();
+	void ApplyRoomModifiers();
+	void SpawnEnemies();
 	FVector GetRandomSpawnPoint();
 	void RegisterEnemy(AActor* Enemy);
 	void SpawnRandomScrapsAtLocation(FVector Location, int32 Amount);
+	ERoomType GetRandomRoomType();
 	void CompleteRoom();
 	
 	//Data
 	UPROPERTY(VisibleAnywhere, Category = "Room State")
 	ERoomState RoomState = ERoomState::Active;
 	
+	UPROPERTY(VisibleAnywhere, Category = "Room State")
+	int32 CurrentRoomRank = 1;
+	
 	UPROPERTY()
 	UEnemyPool* ActiveEnemyPool;
 	
-	float CurrentObjectiveProgress = 0.f;
+	int32 EnemiesToSpawn = 0;
+	int32 EnemyCount = 0;
 	FTimerHandle SpawnTimerHandle;
 	
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 	//Objectives handling
 	UFUNCTION()
 	void OnEnemyDeath(FVector Location, int32 ScrapsToSpawn);
