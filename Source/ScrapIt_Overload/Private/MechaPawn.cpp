@@ -263,33 +263,51 @@ void AMechaPawn::RemoveScrap(int32 Amount)
 /* --- Mass Tier Management --- */
 void AMechaPawn::CheckTier()
 {
-	FMassTier& HighestApplicableTier = MassTiers[0];
-	for (FMassTier& Tier : MassTiers)
+	const FMassTier* NewTier = nullptr;
+
+	//Check for upgrade using current tier's threshold
+	if (CurrentScraps >= CurrentTier.UpgradeThreshold)
 	{
-		if (CurrentScraps >= Tier.ScrapThreshold)
+		for (const FMassTier& Tier : MassTiers)
 		{
-			HighestApplicableTier = Tier;
-		}
-	}
-	
-	if (HighestApplicableTier.TierNumber != CurrentTier.TierNumber)
-	{
-		//We are upgrading or downgrading Tier
-		CurrentTier = HighestApplicableTier;
-		UpdateMassStats(CurrentTier);
-		UpdateMassVisuals(CurrentTier);
-		
-		//Get the next tier scrap threshold to update UI
-		int32 NextScrapThreshold = 0;
-		for (const FMassTier TierElement : MassTiers)
-		{
-			if (TierElement.TierNumber == CurrentTier.TierNumber + 1)
+			if (Tier.TierNumber == CurrentTier.TierNumber + 1)
 			{
-				NextScrapThreshold = TierElement.ScrapThreshold;
+				UE_LOG(LogTemp, Warning, TEXT("Upgrading to Tier %d!"), Tier.TierNumber);
+				NewTier = &Tier;
+				break;
 			}
 		}
-		OnTierChanged.Broadcast(CurrentTier.TierNumber, NextScrapThreshold);
 	}
+	//Check for downgrade
+	else if (CurrentScraps < CurrentTier.DowngradeThreshold && CurrentTier.TierNumber > 0)
+	{
+		for (const FMassTier& Tier : MassTiers)
+		{
+			if (Tier.TierNumber == CurrentTier.TierNumber - 1)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Downgrading to Tier %d!"), Tier.TierNumber);
+				NewTier = &Tier;
+				break;
+			}
+		}
+	}
+
+	if (NewTier)
+	{
+		ApplyNewTier(*NewTier);
+	}
+}
+
+void AMechaPawn::ApplyNewTier(const FMassTier& Tier)
+{
+	//We are upgrading or downgrading Tier
+	CurrentTier = Tier;
+	UpdateMassStats(CurrentTier);
+	UpdateMassVisuals(CurrentTier);
+	
+	//Update UI
+	OnTierChanged.Broadcast(CurrentTier.TierNumber, CurrentTier.UpgradeThreshold);
+	UE_LOG(LogTemp, Warning, TEXT("Tier Changed to: %d"), Tier.TierNumber);
 }
 
 void AMechaPawn::UpdateMassStats(const FMassTier& Tier)
@@ -343,12 +361,19 @@ void AMechaPawn::LoadMechaState()
 			OnHealthChanged.Broadcast(CurrentHealth);
 		}
 		
+		for (const FMassTier& Tier : MassTiers)
+		{
+			if (Tier.TierNumber == MechaState.CurrentMassTierNumber)
+			{
+				ApplyNewTier(Tier);
+			}
+		}
+		
 		if (MechaState.CurrentScraps > 0)
 		{
 			CurrentScraps = MechaState.CurrentScraps;
-			CheckTier();
-			OnScrapCountChanged.Broadcast(CurrentScraps);
 		}
+		OnScrapCountChanged.Broadcast(CurrentScraps);
 		
 		for (const FWeaponData& WeaponData : MechaState.WeaponLoadout)
 		{
@@ -424,7 +449,7 @@ void AMechaPawn::AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSo
 		FActorSpawnParameters SpawnInfo;
 		SpawnInfo.Owner = this;
 		
-		if (AActor* NewWeapon = GetWorld()->SpawnActor<AActor>(WeaponClass, AttachSocket->GetComponentTransform(), SpawnInfo))
+		if (AWeaponBase* NewWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, AttachSocket->GetComponentTransform(), SpawnInfo))
 		{
 			NewWeapon->AttachToComponent(AttachSocket, FAttachmentTransformRules::KeepWorldTransform);
 			WeaponLoadout.Add(FWeaponData{WeaponClass, 1, Socket});

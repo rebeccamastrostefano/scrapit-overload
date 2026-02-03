@@ -31,7 +31,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class USceneComponent* FirePoint;
 	
+	AActor* CurrentTarget = nullptr;
+	
 	virtual void Fire() override;
 	
-	void TrackTarget(AActor* Target);
+	void TrackTarget();
 };

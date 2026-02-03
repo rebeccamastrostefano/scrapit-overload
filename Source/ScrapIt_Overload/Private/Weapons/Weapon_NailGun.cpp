@@ -14,11 +14,10 @@ AWeapon_NailGun::AWeapon_NailGun()
 
 void AWeapon_NailGun::Fire()
 {
-	AActor* Target = FindNearestEnemy();
-	if (Target && ProjectileBP)
+	CurrentTarget = FindNearestEnemy();
+	TrackTarget();
+	if (CurrentTarget && ProjectileBP)
 	{
-		TrackTarget(Target);
-		
 		FActorSpawnParameters SpawnParameters;
 		SpawnParameters.Owner = this;
 		SpawnParameters.Instigator = GetInstigator();
@@ -32,13 +31,13 @@ void AWeapon_NailGun::Fire()
 	}
 }
 
-void AWeapon_NailGun::TrackTarget(AActor* Target)
+void AWeapon_NailGun::TrackTarget()
 {
-	if (!Target)
+	if (!CurrentTarget)
 	{
 		return;
 	}
 	
-	FVector Direction = (Target->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+	FVector Direction = (CurrentTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	SetActorRotation(Direction.Rotation());
 }

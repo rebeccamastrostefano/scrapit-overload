@@ -40,20 +40,20 @@ void ADoor::OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActo
 			PM->SaveMechaState(
 				MechaPawn->GetCurrentScrapCount(),
 				MechaPawn->GetCurrentHealth(),
+				MechaPawn->GetCurrentTier().TierNumber,
 				MechaPawn->GetCurrentWeaponLoadout()
 				);
 			PM->AdvanceRoom();
 			
 			if (UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance()))
 			{
-				// Get the Level Pointer from the Map
-				if (TSoftObjectPtr<UWorld> LevelPtr = GI->RoomLevels.FindRef(NextRoomType))
+				if (const TSoftObjectPtr<UWorld>* LevelPtr = GI->RoomLevels.Find(NextRoomType))
 				{
-					UGameplayStatics::OpenLevelBySoftObjectPtr(this, LevelPtr);
+					UGameplayStatics::OpenLevelBySoftObjectPtr(this, *LevelPtr);
 				}
 				else
 				{
-					UE_LOG(LogTemp, Error, TEXT("No Level assigned for Room Type: %d"), (int32)NextRoomType);
+					UE_LOG(LogTemp, Error, TEXT("No Level assigned for Room Type: %d"), NextRoomType);
 				}
 			}
 		}

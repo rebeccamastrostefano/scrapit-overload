@@ -24,7 +24,10 @@ struct FMassTier
 	int8 TierNumber;
 	
 	UPROPERTY(EditAnywhere)
-	int32 ScrapThreshold;
+	int32 UpgradeThreshold;
+	
+	UPROPERTY(EditAnywhere)
+	int32 DowngradeThreshold;
 	
 	UPROPERTY(EditAnywhere, meta = (UIMin = "0.1", ClampMin = "0.1", ClampMax = "1.0"))
 	float SpeedPenalty;
@@ -55,6 +58,9 @@ struct FMechaRunState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mecha Data")
 	int CurrentScraps = 0;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mecha Data")
+	int32 CurrentMassTierNumber = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mecha Data")
 	float CurrentHealth = 0;
@@ -91,11 +97,12 @@ public:
 	
 	//SETTERS
 	UFUNCTION(BlueprintCallable, Category = "Run Data")
-	void SaveMechaState(const float Scraps, const float Health, const TArray<FWeaponData>& Weapons)
+	void SaveMechaState(const float Scraps, const float Health, const int CurrentMassTierNumber, const TArray<FWeaponData>& Weapons)
 	{
 		CurrentMechaState.CurrentScraps = Scraps;
 		CurrentMechaState.CurrentHealth = Health;
 		CurrentMechaState.WeaponLoadout = Weapons;
+		CurrentMechaState.CurrentMassTierNumber = CurrentMassTierNumber;
 	}
 	
 	UFUNCTION(BlueprintCallable, Category = "Run Data")

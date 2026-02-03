@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "Weapons/WeaponBase.h"
 #include "InputActionValue.h"
 #include "Interfaces/Damageable.h"
 #include "Core/PersistentManager.h"
@@ -162,7 +163,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Mecha State")
 	TArray<FWeaponData> WeaponLoadout;
 	
-	TMap<EWeaponSocket, AActor*> SocketsToWeapons;
+	TMap<EWeaponSocket, AWeaponBase*> SocketsToWeapons;
 	
 	void LoadMechaState();
 	
@@ -178,6 +179,7 @@ protected:
 	
 	/* --- Tier Functions --- */
 	void CheckTier();
+	void ApplyNewTier(const FMassTier& Tier);
 	void UpdateMassStats(const FMassTier& Tier);
 	void UpdateMassVisuals(const FMassTier& Tier);
 	
