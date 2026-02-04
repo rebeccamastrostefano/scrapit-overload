@@ -7,6 +7,8 @@
 #include "Engine/GameInstance.h"
 #include "Rooms/RoomPool.h"
 #include "Scraps/ScrapActor.h"
+#include "Weapons/WeaponBase.h"
+#include "Weapons/WeaponLevels.h"
 #include "ScrapItGameInstance.generated.h"
 
 /**
@@ -22,7 +24,10 @@ public:
 	TMap<EScrapType, TSubclassOf<AScrapActor>> ScrapTypeToBP;
 	
 	UPROPERTY(EditAnywhere, Category = "Global References")
-	TMap<TSubclassOf<AActor>, TSubclassOf<AScrapActor>> WeaponClassToScrapBP;
+	TMap<EScrapType, UWeaponLevels*> WeaponLevels;
+	
+	UPROPERTY(EditAnywhere, Category = "Global References")
+	TMap<EScrapType, TSubclassOf<AWeaponBase>> ScrapTypeToWeaponBP;
 	
 	UPROPERTY(EditAnywhere, Category = "Global References")
 	TMap<int32, UEnemyPool*> RankToEnemyPool;

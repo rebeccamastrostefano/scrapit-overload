@@ -3,6 +3,7 @@
 
 #include "Weapons/WeaponBase.h"
 
+#include "Core/ScrapItGameInstance.h"
 #include "Interfaces/Enemy.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -11,7 +12,9 @@ AWeaponBase::AWeaponBase()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	
+	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh Component"));
+	RootComponent = MeshComponent;
 }
 
 // Called when the game starts or when spawned
@@ -56,5 +59,44 @@ AActor* AWeaponBase::FindNearestEnemy() const
 		}
 	}
 	return NearestEnemy;
+}
+
+bool AWeaponBase::IsWeaponUpgrading(const int32 TierNumber)
+{
+	//If the new tier is higher than the current weapon level, upgrade the weapon
+	if (TierNumber > CurrentWeaponLevel)
+	{
+		SetWeaponLevel(TierNumber);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void AWeaponBase::SetWeaponLevel(const int32 NewLevel)
+{
+	if (const UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance()))
+	{
+		if (GI->WeaponLevels.Contains(ScrapType))
+		{
+			UWeaponLevels* WeaponLevels = GI->WeaponLevels[ScrapType];
+			if (WeaponLevels->Levels.Contains(NewLevel))
+			{
+				FWeaponLevelDefinition& Level = WeaponLevels->Levels[NewLevel];
+				
+				CurrentWeaponLevel = NewLevel;
+				
+				MeshComponent->SetStaticMesh(Level.WeaponMesh);
+				Damage *= Level.DamageMultiplier;
+				Range *= Level.RangeMultiplier;
+				FireRate *= Level.FireRateMultiplier;
+				
+				ApplyUniquePowerUp();
+			}
+		}
+	}
+	
 }
 

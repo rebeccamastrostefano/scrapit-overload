@@ -4,6 +4,7 @@
 #include "Scraps/ScrapActor.h"
 #include "Kismet/GameplayStatics.h"
 #include "MechaPawn.h"
+#include "Core/ScrapItGameInstance.h"
 
 // Sets default values
 AScrapActor::AScrapActor()
@@ -23,6 +24,33 @@ void AScrapActor::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	if (ScrapType == EScrapType::Basic)
+	{
+		//Pick a random mesh from the array
+		if (int32 const NumMeshes = BasicScrapMeshes.Num() > 0)
+		{
+			int32 const MeshIndex = FMath::RandRange(0, NumMeshes - 1);
+			ScrapMesh->SetStaticMesh(BasicScrapMeshes[MeshIndex]);
+		}
+	}
+}
+
+void AScrapActor::InitWeaponScrap(EScrapType WeaponScrapType, const int32 LevelNumber)
+{
+	WeaponLevel = LevelNumber;
+	ScrapType = WeaponScrapType;
+	if (UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance()))
+	{
+		if (GI->WeaponLevels.Contains((ScrapType)))
+		{
+			const UWeaponLevels* LevelsPool = GI->WeaponLevels[ScrapType];
+			if (LevelsPool->Levels.Contains(LevelNumber))
+			{
+				const FWeaponLevelDefinition& WeaponData = LevelsPool->Levels[LevelNumber];
+				ScrapMesh->SetStaticMesh(WeaponData.WeaponMesh);
+			}
+		}
+	}
 }
 
 // Called every frame
@@ -126,10 +154,7 @@ void AScrapActor::OnCollected()
                 			
                 if (AMechaPawn* Mecha = Cast<AMechaPawn>(PlayerPawn))
                 {
-                	if (WeaponBP)
-                	{
-                		Mecha->EquipWeapon(WeaponBP);
-                	}
+                	Mecha->EquipWeapon(ScrapType, WeaponLevel);
                 }
 				break;
 			}

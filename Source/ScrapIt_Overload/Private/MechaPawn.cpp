@@ -294,6 +294,20 @@ void AMechaPawn::CheckTier()
 
 	if (NewTier)
 	{
+		if (CurrentTier.TierNumber < NewTier->TierNumber)
+		{
+			//If we are upgrading, check if we should upgrade weapons too
+			for (FWeaponData& WeaponData : WeaponLoadout)
+			{
+				if (AWeaponBase* Weapon = SocketsToWeapons[WeaponData.Socket])
+				{
+					if (Weapon->IsWeaponUpgrading(NewTier->TierNumber))
+					{
+						WeaponData.CurrentLevel = NewTier->TierNumber;
+					}
+				}
+			}
+		}
 		ApplyNewTier(*NewTier);
 	}
 }
@@ -377,21 +391,18 @@ void AMechaPawn::LoadMechaState()
 		
 		for (const FWeaponData& WeaponData : MechaState.WeaponLoadout)
 		{
-			if (WeaponData.WeaponClass)
-			{
-				AttachWeaponToSocket(WeaponData.WeaponClass, WeaponData.Socket);
-			}
+			AttachWeaponToSocket(WeaponData.ScrapWeaponType, WeaponData.Socket, WeaponData.CurrentLevel);
 		}
 	}
 }
 
 /* --- Weapon Management --- */
-void AMechaPawn::EquipWeapon(TSubclassOf<AActor> WeaponClass)
+void AMechaPawn::EquipWeapon(const EScrapType WeaponScrapType, const int32 WeaponLevel)
 {
-	OnWeaponAcquired.Broadcast(WeaponClass);
+	OnWeaponAcquired.Broadcast(WeaponScrapType, WeaponLevel);
 }
 
-void AMechaPawn::AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSocket Socket)
+void AMechaPawn::AttachWeaponToSocket(const EScrapType WeaponScrapType, const EWeaponSocket Socket, const int32 WeaponLevel)
 {
 	USceneComponent* AttachSocket;
 	switch(Socket)
@@ -412,21 +423,27 @@ void AMechaPawn::AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSo
 			AttachSocket = SocketFront;
 	}
 	
-	if (WeaponClass && AttachSocket)
+	if (AttachSocket)
 	{
 		//If we are equipping a weapon on an occupied socket, swap it
-		if (SocketsToWeapons.Contains(Socket))
+		if (UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance()))
 		{
-			UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance());
-			if (GI)
+			if (SocketsToWeapons.Contains(Socket))
 			{
 				//Get the old weapon class to drop as scrap
+				EScrapType ScrapType = EScrapType::Basic;
 				TSubclassOf<AScrapActor> OldWeaponScrapClass = nullptr;
+				int32 OldWeaponLevel = 0;
 				for (const FWeaponData& Data : WeaponLoadout)
 				{
 					if (Data.Socket == Socket)
 					{
-						OldWeaponScrapClass = GI->WeaponClassToScrapBP[Data.WeaponClass];
+						ScrapType = Data.ScrapWeaponType;
+						OldWeaponLevel = Data.CurrentLevel;
+						if (GI->ScrapTypeToBP.Contains(ScrapType))
+						{
+							OldWeaponScrapClass = GI->ScrapTypeToBP[ScrapType];
+						}
 						break;
 					}
 				}
@@ -440,20 +457,27 @@ void AMechaPawn::AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSo
 				//Drop the old weapon on ground as scrap
 				if (OldWeaponScrapClass)
 				{
-					GetWorld()->SpawnActor<AActor>(OldWeaponScrapClass, GetActorTransform());
+					AScrapActor* WeaponScrap = GetWorld()->SpawnActor<AScrapActor>(OldWeaponScrapClass, GetActorTransform());
+					WeaponScrap->InitWeaponScrap(ScrapType, OldWeaponLevel);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Error: Couldn't find Scrap Class for Weapon Type: %s"), *UEnum::GetValueAsString(ScrapType));
 				}
 			}
-		}
-		
-		//Spawn weapon and attach to socket
-		FActorSpawnParameters SpawnInfo;
-		SpawnInfo.Owner = this;
-		
-		if (AWeaponBase* NewWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponClass, AttachSocket->GetComponentTransform(), SpawnInfo))
-		{
-			NewWeapon->AttachToComponent(AttachSocket, FAttachmentTransformRules::KeepWorldTransform);
-			WeaponLoadout.Add(FWeaponData{WeaponClass, 1, Socket});
-			SocketsToWeapons.Add(Socket, NewWeapon);
+			
+			//Spawn weapon and attach to socket
+			FActorSpawnParameters SpawnInfo;
+			SpawnInfo.Owner = this;
+			const TSubclassOf<AWeaponBase> WeaponBP = GI->ScrapTypeToWeaponBP[WeaponScrapType];
+			
+			if (AWeaponBase* NewWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponBP, AttachSocket->GetComponentTransform(), SpawnInfo))
+			{
+				NewWeapon->AttachToComponent(AttachSocket, FAttachmentTransformRules::KeepWorldTransform);
+				WeaponLoadout.Add(FWeaponData{WeaponScrapType, WeaponLevel, Socket});
+				SocketsToWeapons.Add(Socket, NewWeapon);
+				NewWeapon->IsWeaponUpgrading(WeaponLevel);
+			}
 		}
 	}
 }
@@ -472,14 +496,13 @@ void AMechaPawn::TakeDamage(float Amount)
 			RemoveScrap(ScrapLost);
 			return;
 		}
-		else
-		{
-			//Scraps are lost and Mecha takes remaining damage
-			float const RemainingDamage = Amount - TotalScrapShieldAbsorption;
-			RemoveScrap(CurrentScraps);
-			CurrentHealth -= RemainingDamage;
-			OnHealthChanged.Broadcast(CurrentHealth);
-		}
+	
+		//Scraps are lost and Mecha takes remaining damage
+		float const RemainingDamage = Amount - TotalScrapShieldAbsorption;
+		RemoveScrap(CurrentScraps);
+		CurrentHealth -= RemainingDamage;
+		OnHealthChanged.Broadcast(CurrentHealth);
+		
 	}
 	else
 	{

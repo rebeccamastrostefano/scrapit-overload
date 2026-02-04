@@ -5,9 +5,6 @@
 
 AWeapon_NailGun::AWeapon_NailGun()
 {
-	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	RootComponent = MeshComponent;
-	
 	FirePoint = CreateDefaultSubobject<USceneComponent>(TEXT("FirePoint"));
 	FirePoint->SetupAttachment(RootComponent);
 }
@@ -28,6 +25,18 @@ void AWeapon_NailGun::Fire()
 		{
 			NewProjectile->InitializeProjectile(Damage, ProjectileSpeed);
 		}
+	}
+}
+
+void AWeapon_NailGun::ApplyUniquePowerUp()
+{
+	switch (CurrentWeaponLevel)
+	{
+		case 1:
+			break;
+		default:
+			break;
+		//TODO: powerups
 	}
 }
 

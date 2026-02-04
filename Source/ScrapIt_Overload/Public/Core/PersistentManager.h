@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Scraps/ScrapActor.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "PersistentManager.generated.h"
 
@@ -40,9 +41,8 @@ USTRUCT(BlueprintType)
 struct FWeaponData
 {
 	GENERATED_BODY()
-	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
-	TSubclassOf<AActor> WeaponClass;
+	EScrapType ScrapWeaponType;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	int32 CurrentLevel = 1;

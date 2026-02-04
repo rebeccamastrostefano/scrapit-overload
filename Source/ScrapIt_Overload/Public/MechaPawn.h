@@ -11,7 +11,7 @@
 #include "MechaPawn.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScrapCountChanged, int32, NewScrapCount);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponAcquired, TSubclassOf<AActor>, WeaponClass);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponAcquired, EScrapType, WeaponScrapType, int32, WeaponLevel);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnTierChanged, int32, TierNumber, int32, NextTierThreshold);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float, Health);
 
@@ -249,10 +249,10 @@ public:
 	FOnHealthChanged OnHealthChanged;
 	
 	//Public Functions
-	void EquipWeapon(TSubclassOf<AActor> WeaponClass);
+	void EquipWeapon(const EScrapType WeaponScrapType, const int32 WeaponLevel);
 	
 	UFUNCTION(BlueprintCallable, Category = "Mecha Weapons")
-	void AttachWeaponToSocket(TSubclassOf<AActor> WeaponClass, EWeaponSocket Socket);
+	void AttachWeaponToSocket(const EScrapType WeaponScrapType, const EWeaponSocket Socket, const int32 WeaponLevel);
 	
 	virtual void TakeDamage(float Amount) override;
 };

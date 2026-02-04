@@ -12,9 +12,6 @@ AWeapon_Screws::AWeapon_Screws()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	
-	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
-	RootComponent = WeaponMesh;
-	
 	HitboxCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("HitboxCollider"));
 	HitboxCollider->SetupAttachment(RootComponent);
 }
@@ -37,6 +34,18 @@ void AWeapon_Screws::OverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* O
 	if (IDamageable* Target = Cast<IDamageable>(OtherActor))
 	{
 		Target->TakeDamage(Damage);
+	}
+}
+
+void AWeapon_Screws::ApplyUniquePowerUp()
+{
+	switch (CurrentWeaponLevel)
+	{
+		case 1:
+			break;
+		default:
+			break;
+		//TODO: powerups
 	}
 }
 

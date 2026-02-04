@@ -26,14 +26,13 @@ protected:
 	float ProjectileSpeed = 1500.f;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	class UStaticMeshComponent* MeshComponent;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class USceneComponent* FirePoint;
 	
 	AActor* CurrentTarget = nullptr;
 	
 	virtual void Fire() override;
+	
+	virtual void ApplyUniquePowerUp() override;
 	
 	void TrackTarget();
 };

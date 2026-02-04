@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Scraps/ScrapActor.h"
 #include "WeaponBase.generated.h"
 
 UCLASS()
@@ -19,6 +20,12 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
+	UPROPERTY(EditAnywhere, Category = "Components")
+	UStaticMeshComponent* MeshComponent;
+	
+	UPROPERTY(EditAnywhere, Category = "Weapon Settings")
+	EScrapType ScrapType;
+	
 	UPROPERTY(EditAnywhere, Category = "Weapon Settings")
 	float Damage = 10.f;
 	
@@ -31,12 +38,17 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Weapon Settings")
 	float FireConeThreshold = 0.7f;
 	
+	UPROPERTY(VisibleAnywhere, Category = "Weapon State")
+	int32 CurrentWeaponLevel = 0;
+	
 	FTimerHandle FireTimer;
 	
 	AActor* FindNearestEnemy() const;
 	
+	void SetWeaponLevel(const int32 NewLevel);
+	virtual void ApplyUniquePowerUp() PURE_VIRTUAL(AWeaponBase::ApplyUniquePowerUp)
 	virtual void Fire() PURE_VIRTUAL(AWeaponBase::Fire);
 
 public:	
-
+	bool IsWeaponUpgrading(const int32 TierNumber);
 };

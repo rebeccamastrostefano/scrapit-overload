@@ -48,9 +48,6 @@ protected:
 	EScrapType ScrapType = EScrapType::Basic;
 	
 	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
-	TSubclassOf<AActor> WeaponBP = nullptr;
-	
-	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
 	float BasePullSpeed = 100.0f;
 	
 	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
@@ -58,6 +55,12 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
 	float MaxBoostSpeed = 5.0f;
+	
+	UPROPERTY(EditAnywhere, Category = "Basic Scrap Settings")
+	TArray<UStaticMesh*> BasicScrapMeshes;
+	
+	UPROPERTY(EditAnywhere, Category = "Weapon Scrap Settings")
+	int32 WeaponLevel = 0;
 	
 	FVector TargetHoverLocation = FVector::ZeroVector;
 	
@@ -76,14 +79,28 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	
+	void InitWeaponScrap(EScrapType WeaponScrapType, const int32 LevelNumber);
+	
+	//SETTERS
 	void SetScrapType(EScrapType const Type)
 	{
 		ScrapType = Type;
 	}
 	
+	void SetWeaponLevel(const int32 Level)
+	{
+		WeaponLevel = Level;
+	}
+	
+	//GETTERS
 	EScrapType GetScrapType() const
 	{
 		return ScrapType;
+	}
+	
+	int32 GetWeaponLevel() const
+	{
+		return WeaponLevel;
 	}
 
 };
