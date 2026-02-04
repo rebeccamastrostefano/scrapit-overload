@@ -27,10 +27,16 @@ void AScrapActor::BeginPlay()
 	if (ScrapType == EScrapType::Basic)
 	{
 		//Pick a random mesh from the array
-		if (int32 const NumMeshes = BasicScrapMeshes.Num() > 0)
+		if (BasicScrapMeshes.Num() > 0)
 		{
-			int32 const MeshIndex = FMath::RandRange(0, NumMeshes - 1);
+			int32 const MeshIndex = FMath::RandRange(0, BasicScrapMeshes.Num() - 1);
 			ScrapMesh->SetStaticMesh(BasicScrapMeshes[MeshIndex]);
+			
+		}
+		if (BasicScrapMaterials.Num() > 0)
+		{
+			int32 const MaterialIndex = FMath::RandRange(0, BasicScrapMaterials.Num() - 1);
+			ScrapMesh->SetMaterial(0, BasicScrapMaterials[MaterialIndex]);
 		}
 	}
 }

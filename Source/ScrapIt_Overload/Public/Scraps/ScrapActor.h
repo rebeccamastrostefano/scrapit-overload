@@ -59,6 +59,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Basic Scrap Settings")
 	TArray<UStaticMesh*> BasicScrapMeshes;
 	
+	UPROPERTY(EditAnywhere, Category = "Basic Scrap Settings")
+	TArray<UMaterialInterface*> BasicScrapMaterials;
+	
 	UPROPERTY(EditAnywhere, Category = "Weapon Scrap Settings")
 	int32 WeaponLevel = 0;
 	

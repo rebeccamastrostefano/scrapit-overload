@@ -190,10 +190,10 @@ void ARoomManager::SpawnRandomScrapsAtLocation(FVector Location, int32 Amount)
 		RandomOffset.Z = 0.f;
 		const FVector FinalLocation = Location + RandomOffset + FVector(0, 0, 40.f);
 		
-		const float RandomYaw = FMath::RandRange(0.f, 360.f);
-		const FRotator RandomRotation = FRotator(0.f, RandomYaw, 0.f);
+		const float RandomRotation = FMath::RandRange(0.f, 360.f);
+		const FRotator Rotation = FRotator(RandomRotation, RandomRotation, RandomRotation);
 		
-		if (AScrapActor* NewScrap = World->SpawnActor<AScrapActor>(BasicScrapBlueprint, FinalLocation, RandomRotation, SpawnParams))
+		if (AScrapActor* NewScrap = World->SpawnActor<AScrapActor>(BasicScrapBlueprint, FinalLocation, Rotation, SpawnParams))
 		{
 			//TODO: randomize scrap type
 			NewScrap->SetScrapType(EScrapType::Basic);
