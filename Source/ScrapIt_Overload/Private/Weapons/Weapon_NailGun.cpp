@@ -9,10 +9,16 @@ AWeapon_NailGun::AWeapon_NailGun()
 	FirePoint->SetupAttachment(RootComponent);
 }
 
+void AWeapon_NailGun::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	
+	CurrentTarget = FindNearestEnemy();
+	TrackEnemy(DeltaTime);
+}
+
 void AWeapon_NailGun::Fire()
 {
-	CurrentTarget = FindNearestEnemy();
-	TrackTarget();
 	if (CurrentTarget && ProjectileBP)
 	{
 		FActorSpawnParameters SpawnParameters;
@@ -38,15 +44,4 @@ void AWeapon_NailGun::ApplyUniquePowerUp()
 			break;
 		//TODO: powerups
 	}
-}
-
-void AWeapon_NailGun::TrackTarget()
-{
-	if (!CurrentTarget)
-	{
-		return;
-	}
-	
-	FVector Direction = (CurrentTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-	SetActorRotation(Direction.Rotation());
 }

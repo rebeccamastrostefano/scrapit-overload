@@ -160,6 +160,7 @@ void AMechaPawn::Tick(float DeltaTime)
 	
 	UpdateSteer(DeltaTime);
 	ApplyLateralFriction();
+	UpdateMagnetDrag(DeltaTime);
 	AnimateWheels(DeltaTime);
 }
 
@@ -217,6 +218,15 @@ void AMechaPawn::ApplyLateralFriction()
 	FVector const ImpulseToApply = -RightVector * LateralSpeed * GripStrength;
 	
 	MechaMesh->AddImpulse(ImpulseToApply, NAME_None, true);
+}
+
+void AMechaPawn::UpdateMagnetDrag(float DeltaTime)
+{
+	const float TargetDamping = bIsMagnetActive ? MagnetLinearDamping : BaseLinearDamping;
+	const float CurrentDamping = MechaMesh->GetLinearDamping();
+	
+	const float NewDamping = FMath::FInterpTo(CurrentDamping, TargetDamping, DeltaTime, DampingInterpSpeed);
+	MechaMesh->SetLinearDamping(NewDamping);
 }
 
 /* --- Scrap Management --- */

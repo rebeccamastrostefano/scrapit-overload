@@ -28,11 +28,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class USceneComponent* FirePoint;
 	
-	AActor* CurrentTarget = nullptr;
-	
 	virtual void Fire() override;
 	
 	virtual void ApplyUniquePowerUp() override;
 	
-	void TrackTarget();
+public:
+	virtual void Tick(float DeltaTime) override;
 };

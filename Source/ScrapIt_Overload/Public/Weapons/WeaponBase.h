@@ -38,12 +38,20 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Weapon Settings")
 	float FireConeThreshold = 0.7f;
 	
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Settings")
+	float RotationSpeed = 5.f;
+	
 	UPROPERTY(VisibleAnywhere, Category = "Weapon State")
 	int32 CurrentWeaponLevel = 0;
+	
+	
+	AActor* CurrentTarget;
 	
 	FTimerHandle FireTimer;
 	
 	AActor* FindNearestEnemy() const;
+	void TrackEnemy(float DeltaTime);
+	FRotator GetSocketRotation() const;
 	
 	void SetWeaponLevel(const int32 NewLevel);
 	virtual void ApplyUniquePowerUp() PURE_VIRTUAL(AWeaponBase::ApplyUniquePowerUp)

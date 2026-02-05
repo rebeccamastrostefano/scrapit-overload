@@ -87,6 +87,15 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
 	float BaseAccelerationForce = 400000.0f;
 	
+	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
+	float BaseLinearDamping = 1.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
+	float MagnetLinearDamping = 5.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
+	float DampingInterpSpeed = 8.f;
+	
 	float CurrentSteerAngle = 0.0f;
 	float TargetSteerAngle = 0.0f;
 	float CurrentWheelRoll = 0.0f;
@@ -176,6 +185,7 @@ protected:
 	/* --- Magnet Functions --- */
 	void ActivateMagnet();
 	void ToggleMagnet();
+	void UpdateMagnetDrag(float DeltaTime);
 	
 	/* --- Tier Functions --- */
 	void CheckTier();

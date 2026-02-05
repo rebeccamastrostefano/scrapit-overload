@@ -36,7 +36,13 @@ AActor* AWeaponBase::FindNearestEnemy() const
 	float MinDistSquared = FMath::Square(Range);
 	
 	const FVector Location = GetActorLocation();
-	const FVector ForwardDirection = GetActorForwardVector();
+	
+	//Get the socket forward to avoid rotating the weapon fire cone when the weapon rotates (fire cone should be fixed)
+	FVector ForwardDirection = GetActorForwardVector();
+	if (USceneComponent* ParentSocket = GetRootComponent()->GetAttachParent())
+	{
+		ForwardDirection = ParentSocket->GetComponentQuat().GetForwardVector();
+	}
 	
 	for (AActor* Enemy : FoundEnemies)
 	{
@@ -61,6 +67,32 @@ AActor* AWeaponBase::FindNearestEnemy() const
 	return NearestEnemy;
 }
 
+void AWeaponBase::TrackEnemy(float DeltaTime)
+{
+	FRotator TargetRotation;
+	if (CurrentTarget)
+	{
+		const FVector DirectionToTarget = (CurrentTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+		TargetRotation = DirectionToTarget.Rotation();
+	}
+	else
+	{
+		TargetRotation = GetSocketRotation();
+	}
+	
+	const FRotator NewRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, RotationSpeed);
+	SetActorRotation(NewRotation);
+}
+
+FRotator AWeaponBase::GetSocketRotation() const
+{
+	if (USceneComponent* ParentSocket = GetRootComponent()->GetAttachParent())
+	{
+		return ParentSocket->GetComponentRotation();
+	}
+	return GetActorRotation();
+}
+
 bool AWeaponBase::IsWeaponUpgrading(const int32 TierNumber)
 {
 	//If the new tier is higher than the current weapon level, upgrade the weapon
@@ -69,10 +101,8 @@ bool AWeaponBase::IsWeaponUpgrading(const int32 TierNumber)
 		SetWeaponLevel(TierNumber);
 		return true;
 	}
-	else
-	{
-		return false;
-	}
+
+	return false;
 }
 
 void AWeaponBase::SetWeaponLevel(const int32 NewLevel)
