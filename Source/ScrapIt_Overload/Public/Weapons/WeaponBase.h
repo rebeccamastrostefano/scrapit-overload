@@ -27,13 +27,13 @@ protected:
 	EScrapType ScrapType;
 	
 	UPROPERTY(EditAnywhere, Category = "Weapon Settings")
-	float Damage = 10.f;
+	float BaseDamage = 10.f;
 	
 	UPROPERTY(EditAnywhere, Category = "Weapon Settings")
-	float FireRate = 0.5f;
+	float BaseFireRate = 0.5f;
 	
 	UPROPERTY(EditAnywhere, Category = "Weapon Settings")
-	float Range = 800.f;
+	float BaseRange = 800.f;
 	
 	UPROPERTY(EditAnywhere, Category = "Weapon Settings")
 	float FireConeThreshold = 0.7f;
@@ -44,19 +44,25 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon State")
 	int32 CurrentWeaponLevel = 0;
 	
-	
+	UPROPERTY()
 	AActor* CurrentTarget;
+	
+	float Damage;
+	float FireRate;
+	float Range;
 	
 	FTimerHandle FireTimer;
 	
 	AActor* FindNearestEnemy() const;
-	void TrackEnemy(float DeltaTime);
+	void TrackEnemy(const float DeltaTime);
 	FRotator GetSocketRotation() const;
 	
-	void SetWeaponLevel(const int32 NewLevel);
+	void SetLevel(const int32 NewLevel);
+	void UpdateFireTimer();
+	
 	virtual void ApplyUniquePowerUp() PURE_VIRTUAL(AWeaponBase::ApplyUniquePowerUp)
 	virtual void Fire() PURE_VIRTUAL(AWeaponBase::Fire);
 
 public:	
-	bool IsWeaponUpgrading(const int32 TierNumber);
+	bool TryUpgrade(const int32 TierNumber);
 };

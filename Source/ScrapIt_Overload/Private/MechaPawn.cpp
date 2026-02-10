@@ -36,7 +36,7 @@ AMechaPawn::AMechaPawn()
 	// Spring Arm creation
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
-	SpringArm->TargetArmLength = 800.0f;
+	SpringArm->TargetArmLength = CameraHeightOffset;
 	
 	//Camera Lag
 	SpringArm->bEnableCameraLag = true;
@@ -98,11 +98,11 @@ void AMechaPawn::BeginPlay()
 	SpringArm->CameraLagMaxDistance = MaxCameraLagDistance;
 	CurrentAcceleration = BaseAccelerationForce;
 	CurrentSteerSpeed = BaseSteeringSpeed;
-	SpringArm->SetRelativeRotation(FRotator(-60.0f, 0.f, 0.f));
+	SpringArm->SetRelativeRotation(FRotator(CameraRotationOffset, 0.f, 0.f));
 	
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	if (const APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			if (DefaultMappingContext)
 			{
@@ -128,13 +128,33 @@ void AMechaPawn::BeginPlay()
 	{
 		if (Mesh->ComponentHasTag("MassTier"))
 		{
-			MassMeshParts.Add(Mesh);
-			Mesh->SetVisibility(false);
+			const FName* NumericTag = Mesh->ComponentTags.FindByPredicate([](const FName Tag)
+			{
+				return Tag.ToString().IsNumeric();
+			});
+			
+			if (NumericTag != nullptr)
+			{
+				int32 TierNumber = FCString::Atoi(*NumericTag->ToString());
+				MassMeshesForTiers.Add(Mesh, TierNumber);
+			}
 		}
 	}
 	
-	//Load saved Mecha State from Persistent Manager
-	LoadMechaState();
+	
+	
+	PersistentManager = GetGameInstance()->GetSubsystem<UPersistentManager>();
+	GameInstance = Cast<UScrapItGameInstance>(GetGameInstance());
+	
+	if (PersistentManager != nullptr)
+	{
+		//Load saved Mecha State from Persistent Manager
+		LoadMechaState(PersistentManager->GetMechaState());
+	}
+	else 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Error: No Persistent Manager found"));
+	}
 }
 
 // Called to bind functionality to input
@@ -146,10 +166,36 @@ void AMechaPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	{
 		EnhancedInputComponent->BindAction(ThrustAction, ETriggerEvent::Triggered, this, &AMechaPawn::ApplyThrust);
 		EnhancedInputComponent->BindAction(TurnAction, ETriggerEvent::Triggered, this, &AMechaPawn::ApplySteer);
-		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Triggered, this, &AMechaPawn::ActivateMagnet);
+		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Triggered, this, &AMechaPawn::PullScraps);
 		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Started, this, &AMechaPawn::ToggleMagnet);
 		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Canceled, this, &AMechaPawn::ToggleMagnet);
 		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Completed, this, &AMechaPawn::ToggleMagnet);
+	}
+}
+
+void AMechaPawn::LoadMechaState(FMechaRunState MechaRunState)
+{
+	//Apply Health
+	if (MechaRunState.CurrentHealth > 0)
+	{
+		CurrentHealth = MechaRunState.CurrentHealth;
+		OnHealthChanged.Broadcast(CurrentHealth);
+	}
+	
+	//Apply Mass Tier
+	ApplyNewTier(GetTierByNumber(MechaRunState.CurrentMassTierNumber));
+	
+	//Set Current Scraps
+	if (MechaRunState.CurrentScraps > 0)
+	{
+		CurrentScraps = MechaRunState.CurrentScraps;
+	}
+	OnScrapCountChanged.Broadcast(CurrentScraps);
+	
+	//Apply Weapons
+	for (const auto& [Type, CurrentLevel, Socket] : MechaRunState.WeaponLoadout)
+	{
+		EquipWeaponTypeToSocket(Type, Socket, CurrentLevel);
 	}
 }
 
@@ -167,17 +213,17 @@ void AMechaPawn::Tick(float DeltaTime)
 /* --- Movement Functions --- */
 void AMechaPawn::ApplyThrust(const FInputActionValue& Value)
 {
-	float FloatValue = Value.Get<float>();
+	const float FloatValue = Value.Get<float>();
 	UpdateThrust(FloatValue);
 }
 
 void AMechaPawn::ApplySteer(const FInputActionValue& Value)
 {
-	float FloatValue = Value.Get<float>();
+	const float FloatValue = Value.Get<float>();
 	TargetSteerAngle = FloatValue * MaxSteerAngle;
 }
 
-void AMechaPawn::UpdateThrust(float Value)
+void AMechaPawn::UpdateThrust(const float Value) const
 {
 	if (Value == 0.0f)
 	{
@@ -193,7 +239,7 @@ void AMechaPawn::UpdateThrust(float Value)
 	MechaMesh->AddForce(ForceToAdd);
 }
 
-void AMechaPawn::UpdateSteer(float DeltaTime)
+void AMechaPawn::UpdateSteer(const float DeltaTime)
 {
 	CurrentSteerAngle = FMath::FInterpTo(CurrentSteerAngle, TargetSteerAngle, DeltaTime, CurrentSteerSpeed);
 	FVector const Velocity = MechaMesh->GetPhysicsLinearVelocity();
@@ -202,14 +248,14 @@ void AMechaPawn::UpdateSteer(float DeltaTime)
 	//Only turn if we are moving
 	if (FMath::Abs(ForwardSpeed) > 10.0f)
 	{
-		float TorqueAmount = ForwardSpeed * CurrentSteerAngle * HandlingFactor;
+		const float TorqueAmount = ForwardSpeed * CurrentSteerAngle * HandlingFactor;
 		FVector const RotationTorque = FVector(0.f, 0.f, TorqueAmount);
 		
 		MechaMesh->AddTorqueInDegrees(RotationTorque, NAME_None, true);
 	}
 }
 
-void AMechaPawn::ApplyLateralFriction()
+void AMechaPawn::ApplyLateralFriction() const
 {
 	FVector const Velocity = MechaMesh->GetPhysicsLinearVelocity();
 	FVector const RightVector = MechaMesh->GetRightVector();
@@ -220,7 +266,7 @@ void AMechaPawn::ApplyLateralFriction()
 	MechaMesh->AddImpulse(ImpulseToApply, NAME_None, true);
 }
 
-void AMechaPawn::UpdateMagnetDrag(float DeltaTime)
+void AMechaPawn::UpdateMagnetDrag(const float DeltaTime) const
 {
 	const float TargetDamping = bIsMagnetActive ? MagnetLinearDamping : BaseLinearDamping;
 	const float CurrentDamping = MechaMesh->GetLinearDamping();
@@ -230,24 +276,24 @@ void AMechaPawn::UpdateMagnetDrag(float DeltaTime)
 }
 
 /* --- Scrap Management --- */
-void AMechaPawn::ActivateMagnet()
+void AMechaPawn::PullScraps()
 {
 	TArray<FOverlapResult> Overlaps;
 	FCollisionShape Sphere = FCollisionShape::MakeSphere(MagnetRadius);
 	
 	if (GetWorld()->OverlapMultiByChannel(Overlaps, GetActorLocation(), FQuat::Identity, ECC_PhysicsBody, Sphere))
 	{
-		for (auto& Result : Overlaps)
+		std::for_each(Overlaps.begin(), Overlaps.end(), [this](const FOverlapResult& Result)
 		{
 			AActor* OverlappedActor = Result.GetActor();
 			
 			//Check if the overlapped actor implements IScrappable Interface
-			IScrappable* ScrappableObject = Cast<IScrappable>(OverlappedActor);
-			if (ScrappableObject)
+			if (IScrappable* ScrappableObject = Cast<IScrappable>(OverlappedActor))
 			{
+				//Pull the scrap towards the mecha
 				ScrappableObject->OnMagnetPulled(this, MagnetStrength, MagnetRadius, CollectionRadius);
 			}
-		}
+		});
 	}
 }
 
@@ -256,67 +302,44 @@ void AMechaPawn::ToggleMagnet()
 	bIsMagnetActive = !bIsMagnetActive;
 }
 
-void AMechaPawn::AddScrap(int32 Amount)
+void AMechaPawn::AddScrap(const int32 Amount)
 {
 	CurrentScraps += Amount;
-	CheckTier();
+	CheckForTierChange();
 	OnScrapCountChanged.Broadcast(CurrentScraps);
 }
 
-void AMechaPawn::RemoveScrap(int32 Amount)
+void AMechaPawn::RemoveScrap(const int32 Amount)
 {
 	CurrentScraps -= Amount;
-	CheckTier();
+	CheckForTierChange();
 	OnScrapCountChanged.Broadcast(CurrentScraps);
 }
 
 /* --- Mass Tier Management --- */
-void AMechaPawn::CheckTier()
+void AMechaPawn::CheckForTierChange()
 {
-	const FMassTier* NewTier = nullptr;
-
-	//Check for upgrade using current tier's threshold
-	if (CurrentScraps >= CurrentTier.UpgradeThreshold)
+	//Determine if we are upgrading, downgrading or staying same tier
+	const int32 TierDirection = (CurrentScraps > CurrentTier.UpgradeThreshold) ? 1 : (CurrentScraps < CurrentTier.DowngradeThreshold) ? -1 : 0;
+	
+	if (TierDirection == 0)
 	{
-		for (const FMassTier& Tier : MassTiers)
-		{
-			if (Tier.TierNumber == CurrentTier.TierNumber + 1)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Upgrading to Tier %d!"), Tier.TierNumber);
-				NewTier = &Tier;
-				break;
-			}
-		}
+		return; //No change
 	}
-	//Check for downgrade
-	else if (CurrentScraps < CurrentTier.DowngradeThreshold && CurrentTier.TierNumber > 0)
+	
+	//Find the target Tier (previous or next)
+	const int32 TargetTierNumber = CurrentTier.TierNumber + TierDirection;
+	const FMassTier* NewTier= MassTiers.FindByPredicate([TargetTierNumber](const FMassTier& Tier)
 	{
-		for (const FMassTier& Tier : MassTiers)
-		{
-			if (Tier.TierNumber == CurrentTier.TierNumber - 1)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Downgrading to Tier %d!"), Tier.TierNumber);
-				NewTier = &Tier;
-				break;
-			}
-		}
-	}
+		return Tier.TierNumber == TargetTierNumber;
+	});
 
-	if (NewTier)
+	if (NewTier != nullptr)
 	{
-		if (CurrentTier.TierNumber < NewTier->TierNumber)
+		if (TierDirection == 1)
 		{
 			//If we are upgrading, check if we should upgrade weapons too
-			for (FWeaponData& WeaponData : WeaponLoadout)
-			{
-				if (AWeaponBase* Weapon = SocketsToWeapons[WeaponData.Socket])
-				{
-					if (Weapon->IsWeaponUpgrading(NewTier->TierNumber))
-					{
-						WeaponData.CurrentLevel = NewTier->TierNumber;
-					}
-				}
-			}
+			UpdateWeaponLevels(NewTier->TierNumber);
 		}
 		ApplyNewTier(*NewTier);
 	}
@@ -326,15 +349,15 @@ void AMechaPawn::ApplyNewTier(const FMassTier& Tier)
 {
 	//We are upgrading or downgrading Tier
 	CurrentTier = Tier;
-	UpdateMassStats(CurrentTier);
-	UpdateMassVisuals(CurrentTier);
+	UpdateTierModifiers(CurrentTier);
+	UpdateTierVisuals(CurrentTier);
 	
 	//Update UI
 	OnTierChanged.Broadcast(CurrentTier.TierNumber, CurrentTier.UpgradeThreshold);
 	UE_LOG(LogTemp, Warning, TEXT("Tier Changed to: %d"), Tier.TierNumber);
 }
 
-void AMechaPawn::UpdateMassStats(const FMassTier& Tier)
+void AMechaPawn::UpdateTierModifiers(const FMassTier& Tier)
 {
 	float const NewAccelerationMult = Tier.SpeedPenalty;
 	float const NewSteeringMult = Tier.SteeringPenalty;
@@ -344,156 +367,115 @@ void AMechaPawn::UpdateMassStats(const FMassTier& Tier)
 	UE_LOG(LogTemp, Warning, TEXT("New Acceleration: %f"), CurrentAcceleration);
 }
 
-void AMechaPawn::UpdateMassVisuals(const FMassTier& Tier)
+void AMechaPawn::UpdateTierVisuals(const FMassTier& Tier)
 {
-	for (UStaticMeshComponent* Mesh : MassMeshParts)
+	for (auto& [Mesh, MeshTier] : MassMeshesForTiers)
 	{
-		//Find the Mesh Tier Tag (only a number)
-		int8 MeshTierTag = 0;
-		for (const FName& Tag : Mesh->ComponentTags)
+		if (Mesh != nullptr)
 		{
-			if (Tag.ToString().IsNumeric())
-			{
-				MeshTierTag = FCString::Atoi(*Tag.ToString());
-				break;
-			}
-		}
-		
-		if (MeshTierTag <= Tier.TierNumber)
-		{
-			//Show mesh if its Tier number is less or equal than current Tier
-			Mesh->SetVisibility(true);
-		}
-		else if (MeshTierTag > Tier.TierNumber)
-		{
-			//If we are downgrading, hide greater Tier meshes
-			Mesh->SetVisibility(false);
-		}
-	}
-}
-
-void AMechaPawn::LoadMechaState()
-{
-	if (const UPersistentManager* PM = GetGameInstance()->GetSubsystem<UPersistentManager>())
-	{
-		//Get the saved mecha state and apply loads
-		FMechaRunState MechaState = PM->GetMechaState();
-		
-		if (MechaState.CurrentHealth > 0)
-		{
-			CurrentHealth = MechaState.CurrentHealth;
-			OnHealthChanged.Broadcast(CurrentHealth);
-		}
-		
-		for (const FMassTier& Tier : MassTiers)
-		{
-			if (Tier.TierNumber == MechaState.CurrentMassTierNumber)
-			{
-				ApplyNewTier(Tier);
-			}
-		}
-		
-		if (MechaState.CurrentScraps > 0)
-		{
-			CurrentScraps = MechaState.CurrentScraps;
-		}
-		OnScrapCountChanged.Broadcast(CurrentScraps);
-		
-		for (const FWeaponData& WeaponData : MechaState.WeaponLoadout)
-		{
-			AttachWeaponToSocket(WeaponData.ScrapWeaponType, WeaponData.Socket, WeaponData.CurrentLevel);
+			bool const bIsVisible = MeshTier <= Tier.TierNumber;
+			Mesh->SetVisibility(bIsVisible);
 		}
 	}
 }
 
 /* --- Weapon Management --- */
-void AMechaPawn::EquipWeapon(const EScrapType WeaponScrapType, const int32 WeaponLevel)
+void AMechaPawn::NotifyWeaponAcquired(const EScrapType WeaponScrapType, const int32 WeaponLevel) const
 {
 	OnWeaponAcquired.Broadcast(WeaponScrapType, WeaponLevel);
 }
 
-void AMechaPawn::AttachWeaponToSocket(const EScrapType WeaponScrapType, const EWeaponSocket Socket, const int32 WeaponLevel)
+void AMechaPawn::EquipWeaponTypeToSocket(const EScrapType WeaponScrapType, const EWeaponSocket Socket, const int32 WeaponLevel)
 {
-	USceneComponent* AttachSocket;
-	switch(Socket)
+	USceneComponent* AttachSocket = GetSocketByEnum(Socket);
+	if (AttachSocket == nullptr)
 	{
-		case EWeaponSocket::Front:
-			AttachSocket = SocketFront;
-			break;
-		case EWeaponSocket::Back:
-			AttachSocket = SocketBack;
-			break;
-		case EWeaponSocket::Left:
-			AttachSocket = SocketLeft;
-			break;
-		case EWeaponSocket::Right:
-			AttachSocket = SocketRight;
-			break;
-		default:
-			AttachSocket = SocketFront;
+		return;
 	}
 	
-	if (AttachSocket)
+	if (GameInstance != nullptr)
 	{
-		//If we are equipping a weapon on an occupied socket, swap it
-		if (UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance()))
+		//If we are equipping a weapon on an occupied socket, drop the old one
+		if (SocketsToWeapons.Contains(Socket))
 		{
-			if (SocketsToWeapons.Contains(Socket))
+			DropWeaponOnSocket(Socket);
+		}
+		
+		//Spawn new weapon and attach to socket
+		FActorSpawnParameters SpawnInfo;
+		SpawnInfo.Owner = this;
+		const TSubclassOf<AWeaponBase> WeaponBP = GameInstance->ScrapTypeToWeaponBP[WeaponScrapType];
+		
+		if (AWeaponBase* NewWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponBP, AttachSocket->GetComponentTransform(), SpawnInfo))
+		{
+			NewWeapon->AttachToComponent(AttachSocket, FAttachmentTransformRules::KeepWorldTransform);
+			WeaponLoadout.Add(FWeaponData{WeaponScrapType, WeaponLevel, Socket});
+			SocketsToWeapons.Add(Socket, NewWeapon);
+			NewWeapon->TryUpgrade(WeaponLevel); //Set the level of the weapon
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Error: No Game Instance"));
+	}
+}
+
+void AMechaPawn::DropWeaponOnSocket(const EWeaponSocket Socket)
+{
+	if (AWeaponBase* WeaponActor = SocketsToWeapons.FindRef(Socket))
+	{
+		//Destroy the old weapon actor
+		WeaponActor->Destroy();
+		SocketsToWeapons.Remove(Socket);
+	}
+	
+	//Find the weapon data index in the Loadout
+	const int32 Index = WeaponLoadout.IndexOfByPredicate([Socket](const FWeaponData& Data)
+	{
+		return Data.Socket == Socket;
+	});
+	
+	if (Index != INDEX_NONE)
+	{
+		//Get the old weapon class to drop as scrap
+		const FWeaponData OldWeaponData = WeaponLoadout[Index];
+			
+		if (GameInstance != nullptr && GameInstance->ScrapTypeToBP.Contains(OldWeaponData.ScrapWeaponType))
+		{
+			//Drop the old weapon on ground as scrap
+			const TSubclassOf<AScrapActor> OldWeaponScrapClass = GameInstance->ScrapTypeToBP[OldWeaponData.ScrapWeaponType];
+			if (AScrapActor* WeaponScrap = GetWorld()->SpawnActor<AScrapActor>(OldWeaponScrapClass, GetActorTransform()))
 			{
-				//Get the old weapon class to drop as scrap
-				EScrapType ScrapType = EScrapType::Basic;
-				TSubclassOf<AScrapActor> OldWeaponScrapClass = nullptr;
-				int32 OldWeaponLevel = 0;
-				for (const FWeaponData& Data : WeaponLoadout)
-				{
-					if (Data.Socket == Socket)
-					{
-						ScrapType = Data.ScrapWeaponType;
-						OldWeaponLevel = Data.CurrentLevel;
-						if (GI->ScrapTypeToBP.Contains(ScrapType))
-						{
-							OldWeaponScrapClass = GI->ScrapTypeToBP[ScrapType];
-						}
-						break;
-					}
-				}
-				
-				//Destroy the old weapon actor
-				SocketsToWeapons[Socket]->Destroy();
-				
-				//Remove the swapped weapon from loadout
-				WeaponLoadout.RemoveAll([&](const FWeaponData& Data) { return Data.Socket == Socket; });
-				
-				//Drop the old weapon on ground as scrap
-				if (OldWeaponScrapClass)
-				{
-					AScrapActor* WeaponScrap = GetWorld()->SpawnActor<AScrapActor>(OldWeaponScrapClass, GetActorTransform());
-					WeaponScrap->InitWeaponScrap(ScrapType, OldWeaponLevel);
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("Error: Couldn't find Scrap Class for Weapon Type: %s"), *UEnum::GetValueAsString(ScrapType));
-				}
+				WeaponScrap->InitWeaponScrap(OldWeaponData.ScrapWeaponType, OldWeaponData.CurrentLevel);
 			}
+		}
+		
+		//Remove the old weapon from the loadout
+		WeaponLoadout.RemoveAtSwap(Index);
+	}
+	
 			
-			//Spawn weapon and attach to socket
-			FActorSpawnParameters SpawnInfo;
-			SpawnInfo.Owner = this;
-			const TSubclassOf<AWeaponBase> WeaponBP = GI->ScrapTypeToWeaponBP[WeaponScrapType];
-			
-			if (AWeaponBase* NewWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponBP, AttachSocket->GetComponentTransform(), SpawnInfo))
+	//Remove the swapped weapon from loadout
+	WeaponLoadout.RemoveAll([&](const FWeaponData& Data) { return Data.Socket == Socket; });
+}
+
+void AMechaPawn::UpdateWeaponLevels(const int8 TierNumber)
+{
+	//Check if we should upgrade weapons too
+	for (FWeaponData& Data : WeaponLoadout)
+	{
+		if (AWeaponBase* Weapon = SocketsToWeapons.FindRef(Data.Socket))
+		{
+			if (Weapon->TryUpgrade(TierNumber))
 			{
-				NewWeapon->AttachToComponent(AttachSocket, FAttachmentTransformRules::KeepWorldTransform);
-				WeaponLoadout.Add(FWeaponData{WeaponScrapType, WeaponLevel, Socket});
-				SocketsToWeapons.Add(Socket, NewWeapon);
-				NewWeapon->IsWeaponUpgrading(WeaponLevel);
+				Data.CurrentLevel = TierNumber;
 			}
 		}
 	}
 }
 
 /* --- Vitality System --- */
-void AMechaPawn::TakeDamage(float Amount)
+void AMechaPawn::TakeDamage(const float Amount)
 {
 	UE_LOG(LogTemp, Warning, TEXT("MechaPawn Taking Damage: %f"), Amount);
 	if (CurrentScraps > 0)
@@ -512,7 +494,6 @@ void AMechaPawn::TakeDamage(float Amount)
 		RemoveScrap(CurrentScraps);
 		CurrentHealth -= RemainingDamage;
 		OnHealthChanged.Broadcast(CurrentHealth);
-		
 	}
 	else
 	{
@@ -533,8 +514,48 @@ void AMechaPawn::Die()
 	UE_LOG(LogTemp, Warning, TEXT("Game Over"));
 }
 
+/* Helper Functions */
+FMassTier AMechaPawn::GetTierByNumber(const int32 TierNumber) const
+{
+	const auto FoundTier = MassTiers.FindByPredicate([=](const FMassTier& Tier)
+	{
+		return Tier.TierNumber == TierNumber;
+	});
+		
+	return FoundTier ? *FoundTier : MassTiers[0];
+}
+
+TArray<EWeaponSocket> AMechaPawn::GetAvailableSockets() const
+{
+	TArray AvailableSockets = { EWeaponSocket::Front, EWeaponSocket::Back, EWeaponSocket::Left, EWeaponSocket::Right };
+		
+	AvailableSockets.RemoveAll([&](const EWeaponSocket Socket)
+	{
+		return SocketsToWeapons.Contains(Socket);
+	});
+	return AvailableSockets;
+}
+
+USceneComponent* AMechaPawn::GetSocketByEnum(const EWeaponSocket SocketEnum) const
+{
+	switch(SocketEnum)
+	{
+	case EWeaponSocket::Front:
+		return SocketFront;
+	case EWeaponSocket::Back:
+		return SocketBack;
+	case EWeaponSocket::Left:
+		return SocketLeft;
+	case EWeaponSocket::Right:
+		return SocketRight;
+	default:
+		UE_LOG(LogTemp, Error, TEXT("Invalid Socket"));
+		return nullptr;
+	}
+}
+
 /* Animation */
-void AMechaPawn::AnimateWheels(float DeltaTime)
+void AMechaPawn::AnimateWheels(const float DeltaTime)
 {
 	FVector const Velocity = MechaMesh->GetPhysicsLinearVelocity();
 	if (Velocity == FVector::ZeroVector)

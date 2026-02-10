@@ -29,7 +29,7 @@ void AWeapon_NailGun::Fire()
 		
 		if (NewProjectile)
 		{
-			NewProjectile->InitializeProjectile(Damage, ProjectileSpeed);
+			NewProjectile->InitializeProjectile(BaseDamage, ProjectileSpeed);
 		}
 	}
 }

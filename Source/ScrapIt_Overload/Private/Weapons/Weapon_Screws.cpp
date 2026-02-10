@@ -33,7 +33,7 @@ void AWeapon_Screws::OverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* O
 	
 	if (IDamageable* Target = Cast<IDamageable>(OtherActor))
 	{
-		Target->TakeDamage(Damage);
+		Target->TakeDamage(BaseDamage);
 	}
 }
 

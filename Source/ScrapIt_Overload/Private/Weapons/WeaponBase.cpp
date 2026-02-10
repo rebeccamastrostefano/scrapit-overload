@@ -4,8 +4,8 @@
 #include "Weapons/WeaponBase.h"
 
 #include "Core/ScrapItGameInstance.h"
+#include "Engine/OverlapResult.h"
 #include "Interfaces/Enemy.h"
-#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AWeaponBase::AWeaponBase()
@@ -21,7 +21,12 @@ AWeaponBase::AWeaponBase()
 void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
-	if (FireRate != 0)
+	
+	Damage = BaseDamage;
+	FireRate = BaseFireRate;
+	Range = BaseRange;
+	
+	if (FireRate > 0)
 	{
 		GetWorldTimerManager().SetTimer(FireTimer, this, &AWeaponBase::Fire, FireRate, true);
 	}
@@ -29,45 +34,53 @@ void AWeaponBase::BeginPlay()
 
 AActor* AWeaponBase::FindNearestEnemy() const
 {
-	TArray<AActor*> FoundEnemies;
-	UGameplayStatics::GetAllActorsWithInterface(GetWorld(), UEnemy::StaticClass(), FoundEnemies);
+	TArray<FOverlapResult> Overlaps;
+	FCollisionShape Scope = FCollisionShape::MakeSphere(BaseRange);
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(GetOwner());
 	
-	AActor* NearestEnemy = nullptr;
-	float MinDistSquared = FMath::Square(Range);
-	
-	const FVector Location = GetActorLocation();
-	
-	//Get the socket forward to avoid rotating the weapon fire cone when the weapon rotates (fire cone should be fixed)
-	FVector ForwardDirection = GetActorForwardVector();
-	if (USceneComponent* ParentSocket = GetRootComponent()->GetAttachParent())
+	//Get all pawns in range
+	if (!GetWorld()->OverlapMultiByChannel(Overlaps, GetActorLocation(), FQuat::Identity, ECC_Pawn, Scope, Params))
 	{
-		ForwardDirection = ParentSocket->GetComponentQuat().GetForwardVector();
+		return nullptr;
 	}
 	
-	for (AActor* Enemy : FoundEnemies)
+	AActor* NearestEnemy = nullptr;
+	float MinDistSquared = FMath::Square(BaseRange);
+	const FVector ActorLocation = GetActorLocation();
+	const FVector Forward = GetSocketRotation().Vector();
+	
+	for (const FOverlapResult& Result : Overlaps)
 	{
-		if (Enemy == nullptr) continue;
+		AActor* const OtherActor = Result.GetActor();
 		
-		FVector EnemyLocation = Enemy->GetActorLocation();
-		FVector DirectionToEnemy = (EnemyLocation - Location).GetSafeNormal();
-		
-		//Check if the enemy is in the "Fire Cone" of the weapon
-		float const Angle = FVector::DotProduct(ForwardDirection, DirectionToEnemy);
-		if (Angle >= FireConeThreshold)
+		//Check for interface
+		if (OtherActor == nullptr || !OtherActor->Implements<UEnemy>())
 		{
-			//Check if the enemy is within range
-			float DistSquared = FVector::DistSquared(Location, EnemyLocation);
-			if (DistSquared < MinDistSquared)
-			{
-				MinDistSquared = DistSquared;
-				NearestEnemy = Enemy;
-			}
+			continue;
+		}
+		
+		const FVector EnemyLocation = OtherActor->GetActorLocation();
+		const FVector ToEnemy = (EnemyLocation - ActorLocation).GetSafeNormal();
+		
+		//Check if enemy is in fire cone
+		if (FVector::DotProduct(Forward, ToEnemy) < FireConeThreshold)
+		{
+			continue;
+		}
+		
+		//Check if in range
+		const float DistSquared = FVector::DistSquared(EnemyLocation, ActorLocation);
+		if (DistSquared < MinDistSquared)
+		{
+			MinDistSquared = DistSquared;
+			NearestEnemy = OtherActor;
 		}
 	}
 	return NearestEnemy;
 }
 
-void AWeaponBase::TrackEnemy(float DeltaTime)
+void AWeaponBase::TrackEnemy(const float DeltaTime)
 {
 	FRotator TargetRotation;
 	if (CurrentTarget)
@@ -86,47 +99,65 @@ void AWeaponBase::TrackEnemy(float DeltaTime)
 
 FRotator AWeaponBase::GetSocketRotation() const
 {
-	if (USceneComponent* ParentSocket = GetRootComponent()->GetAttachParent())
+	if (const USceneComponent* ParentSocket = GetRootComponent()->GetAttachParent())
 	{
 		return ParentSocket->GetComponentRotation();
 	}
 	return GetActorRotation();
 }
 
-bool AWeaponBase::IsWeaponUpgrading(const int32 TierNumber)
+bool AWeaponBase::TryUpgrade(const int32 TierNumber)
 {
 	//If the new tier is higher than the current weapon level, upgrade the weapon
 	if (TierNumber > CurrentWeaponLevel)
 	{
-		SetWeaponLevel(TierNumber);
+		SetLevel(TierNumber);
 		return true;
 	}
 
 	return false;
 }
 
-void AWeaponBase::SetWeaponLevel(const int32 NewLevel)
+void AWeaponBase::SetLevel(const int32 NewLevel)
 {
-	if (const UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance()))
+	const UScrapItGameInstance* GameInstance = Cast<UScrapItGameInstance>(GetGameInstance());
+	if (GameInstance == nullptr)
 	{
-		if (GI->WeaponLevels.Contains(ScrapType))
-		{
-			UWeaponLevels* WeaponLevels = GI->WeaponLevels[ScrapType];
-			if (WeaponLevels->Levels.Contains(NewLevel))
-			{
-				FWeaponLevelDefinition& Level = WeaponLevels->Levels[NewLevel];
-				
-				CurrentWeaponLevel = NewLevel;
-				
-				MeshComponent->SetStaticMesh(Level.WeaponMesh);
-				Damage *= Level.DamageMultiplier;
-				Range *= Level.RangeMultiplier;
-				FireRate *= Level.FireRateMultiplier;
-				
-				ApplyUniquePowerUp();
-			}
-		}
+		return;
 	}
 	
+	UWeaponLevels* WeaponLevels = GameInstance->WeaponLevels.FindRef(ScrapType);
+	if (WeaponLevels == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s: No Data Asset found for ScrapType %d!"), *GetName(), ScrapType)
+		return;
+	}
+
+	if (!WeaponLevels->Levels.Contains(NewLevel))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s: No Weapon Level Definition found for Level %d!"), *GetName(), NewLevel)
+		return;
+	}
+	
+	const FWeaponLevelDefinition& LevelDef = WeaponLevels->Levels[NewLevel];
+	
+	MeshComponent->SetStaticMesh(LevelDef.WeaponMesh);
+	Damage = BaseDamage * LevelDef.DamageMultiplier;
+	FireRate = BaseFireRate * LevelDef.FireRateMultiplier;
+	Range = BaseRange * LevelDef.RangeMultiplier;
+	
+	CurrentWeaponLevel = NewLevel;
+	
+	UpdateFireTimer();
+	ApplyUniquePowerUp();
+}
+
+void AWeaponBase::UpdateFireTimer()
+{
+	GetWorldTimerManager().ClearTimer(FireTimer);
+	if (FireRate > 0)
+	{
+		GetWorldTimerManager().SetTimer(FireTimer, this, &AWeaponBase::Fire, FireRate, true);
+	}
 }
 

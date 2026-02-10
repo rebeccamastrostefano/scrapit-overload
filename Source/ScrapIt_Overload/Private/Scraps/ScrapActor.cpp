@@ -158,9 +158,9 @@ void AScrapActor::OnCollected()
 				//If it's a weapon scrap type, equip it to the mecha
 				APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
                 			
-                if (AMechaPawn* Mecha = Cast<AMechaPawn>(PlayerPawn))
+                if (const AMechaPawn* Mecha = Cast<AMechaPawn>(PlayerPawn))
                 {
-                	Mecha->EquipWeapon(ScrapType, WeaponLevel);
+                	Mecha->NotifyWeaponAcquired(ScrapType, WeaponLevel);
                 }
 				break;
 			}
