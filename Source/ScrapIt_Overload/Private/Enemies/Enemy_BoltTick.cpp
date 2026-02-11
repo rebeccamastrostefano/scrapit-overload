@@ -3,7 +3,7 @@
 
 #include "Enemies/Enemy_BoltTick.h"
 
-#include "MechaPawn.h"
+#include "Mecha/MechaPawn.h"
 #include "GameFramework/FloatingPawnMovement.h"
 
 // Sets default values

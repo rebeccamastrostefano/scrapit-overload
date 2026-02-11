@@ -3,7 +3,7 @@
 
 #include "Scraps/ScrapActor.h"
 #include "Kismet/GameplayStatics.h"
-#include "MechaPawn.h"
+#include "Mecha/MechaPawn.h"
 #include "Core/ScrapItGameInstance.h"
 
 // Sets default values
@@ -160,7 +160,7 @@ void AScrapActor::OnCollected()
                 			
                 if (const AMechaPawn* Mecha = Cast<AMechaPawn>(PlayerPawn))
                 {
-                	Mecha->NotifyWeaponAcquired(ScrapType, WeaponLevel);
+                	Mecha->WeaponSystem->NotifyWeaponAcquired(ScrapType, WeaponLevel);
                 }
 				break;
 			}

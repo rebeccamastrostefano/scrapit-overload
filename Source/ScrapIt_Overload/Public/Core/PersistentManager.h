@@ -21,19 +21,19 @@ struct FMassTier
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(EditAnywhere)
-	int8 TierNumber;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int32 TierNumber;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int32 UpgradeThreshold;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int32 DowngradeThreshold;
 	
-	UPROPERTY(EditAnywhere, meta = (UIMin = "0.1", ClampMin = "0.1", ClampMax = "1.0"))
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (UIMin = "0.1", ClampMin = "0.1", ClampMax = "1.0"))
 	float SpeedPenalty;
 	
-	UPROPERTY(EditAnywhere, meta = (UIMin = "0.1", ClampMin = "0.1", ClampMax = "1.0"))
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (UIMin = "0.1", ClampMin = "0.1", ClampMax = "1.0"))
 	float SteeringPenalty;
 };
 

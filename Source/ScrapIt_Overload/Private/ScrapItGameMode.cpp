@@ -2,7 +2,7 @@
 
 
 #include "ScrapItGameMode.h"
-#include "MechaPawn.h"
+#include "Mecha/MechaPawn.h"
 
 AScrapItGameMode::AScrapItGameMode()
 {

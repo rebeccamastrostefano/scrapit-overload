@@ -2,7 +2,7 @@
 
 
 #include "Rooms/Door.h"
-#include "MechaPawn.h"
+#include "Mecha/MechaPawn.h"
 #include "Core/ScrapItGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 

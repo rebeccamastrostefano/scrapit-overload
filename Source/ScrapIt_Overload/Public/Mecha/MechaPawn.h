@@ -4,16 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
-#include "Weapons/WeaponBase.h"
 #include "InputActionValue.h"
+#include "TierSystemComponent.h"
+#include "WeaponSystemComponent.h"
 #include "Interfaces/Damageable.h"
 #include "Core/PersistentManager.h"
 #include "Core/ScrapItGameInstance.h"
 #include "MechaPawn.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScrapCountChanged, int32, NewScrapCount);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponAcquired, EScrapType, WeaponScrapType, int32, WeaponLevel);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnTierChanged, int32, TierNumber, int32, NextTierThreshold);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float, Health);
 
 UCLASS()
@@ -45,7 +44,7 @@ protected:
 	void ApplyThrust(const FInputActionValue& Value);
 	void ApplySteer(const FInputActionValue& Value);
 	
-	/* --- COMPONENTS --- */
+	/* --- Components --- */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UStaticMeshComponent* MechaMesh;
 	
@@ -147,12 +146,6 @@ protected:
 	float MagnetSpeedDecrease = 0.5f;
 	
 	UPROPERTY(EditAnywhere, Category = "Mecha Settings")
-	TArray<FMassTier> MassTiers;
-	
-	UPROPERTY(VisibleAnywhere, Category = "Mecha Settings")
-	TMap<UStaticMeshComponent*, int32> MassMeshesForTiers;
-	
-	UPROPERTY(EditAnywhere, Category = "Mecha Settings")
 	float ScrapShieldAbsorption = 1.f; //If 1, 1 Damage = 1 Scrap Removed
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mecha Settings")
@@ -171,18 +164,14 @@ protected:
 	float CurrentSteerSpeed = 0.0f;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha State")
-	FMassTier CurrentTier;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha State")
 	float CurrentHealth = 100.f;
 	
-	UPROPERTY(VisibleAnywhere, Category = "Mecha State")
-	TArray<FWeaponData> WeaponLoadout;
+	void LoadMechaState(const FMechaRunState& MechaRunState);
 	
-	UPROPERTY()
-	TMap<EWeaponSocket, AWeaponBase*> SocketsToWeapons;
-	
-	void LoadMechaState(FMechaRunState MechaRunState);
+	/* --- Initialization Functions --- */
+	void InitializeVariables();
+	void SetupEnhancedInput() const;
+	void BindEvents();
 	
 	/* --- Movement Functions --- */
 	void UpdateThrust(const float Value) const;
@@ -196,14 +185,8 @@ protected:
 	void UpdateMagnetDrag(float DeltaTime) const;
 	
 	/* --- Tier Functions --- */
-	void CheckForTierChange();
-	void ApplyNewTier(const FMassTier& Tier);
-	void UpdateTierModifiers(const FMassTier& Tier);
-	void UpdateTierVisuals(const FMassTier& Tier);
-	
-	/* --- Weapon Functions --- */
-	void DropWeaponOnSocket(const EWeaponSocket Socket);
-	void UpdateWeaponLevels(const int8 TierNumber);
+	UFUNCTION()
+	void UpdateTierModifiers(FMassTier Tier);
 	
 	virtual void Die() override;
 	
@@ -221,6 +204,12 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UWeaponSystemComponent* WeaponSystem;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UTierSystemComponent* TierSystem;
+	
 	/* --- Setters --- */
 	void AddScrap(const int32 Amount);
 	void RemoveScrap(const int32 Amount);
@@ -233,9 +222,9 @@ public:
 	}
 	
 	UFUNCTION(BlueprintPure, Category = "Mecha State")
-	FORCEINLINE TArray<FWeaponData>& GetCurrentWeaponLoadout()
+	FORCEINLINE TArray<FWeaponData>& GetCurrentWeaponLoadout() const
 	{
-		return WeaponLoadout;
+		return WeaponSystem->WeaponLoadout;
 	}
 	
 	UFUNCTION(BlueprintPure, Category = "Mecha State")
@@ -247,37 +236,16 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Mecha State")
 	FORCEINLINE FMassTier GetCurrentTier() const
 	{
-		return CurrentTier;
+		return TierSystem->CurrentTier;
 	}
-	
-	/* --- Helper Functions --- */
-	UFUNCTION(BlueprintPure, Category = "Mecha Helpers")
-	FMassTier GetTierByNumber(const int32 TierNumber) const;
-	
-	UFUNCTION(BlueprintPure, Category = "Mecha Helpers")
-	TArray<EWeaponSocket> GetAvailableSockets() const;
-	
-	UFUNCTION(BlueprintPure, Category = "Mecha Helpers")
-	USceneComponent* GetSocketByEnum(const EWeaponSocket SocketEnum) const;
 	
 	/* --- Events --- */
 	UPROPERTY(BlueprintAssignable, Category = "Mecha State")
 	FOnScrapCountChanged OnScrapCountChanged;
 	
-	UPROPERTY(BlueprintAssignable, Category = "Mecha State")
-	FOnTierChanged OnTierChanged;
-	
-	UPROPERTY(BlueprintAssignable, Category = "Mecha Weapons")
-	FOnWeaponAcquired OnWeaponAcquired;
-	
 	UPROPERTY(BlueprintAssignable, Category = "Mecha Stats")
 	FOnHealthChanged OnHealthChanged;
 	
 	/* --- Public Functions --- */
-	void NotifyWeaponAcquired(const EScrapType WeaponScrapType, const int32 WeaponLevel) const;
-	
-	UFUNCTION(BlueprintCallable, Category = "Mecha Weapons")
-	void EquipWeaponTypeToSocket(const EScrapType WeaponScrapType, const EWeaponSocket Socket, const int32 WeaponLevel);
-	
 	virtual void TakeDamage(const float Amount) override;
 };
