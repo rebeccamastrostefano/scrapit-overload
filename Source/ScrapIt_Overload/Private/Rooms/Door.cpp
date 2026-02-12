@@ -24,39 +24,52 @@ void ADoor::BeginPlay()
 	CollisionSphere->OnComponentBeginOverlap.AddDynamic(this, &ADoor::OnDoorOverlap);
 }
 
-void ADoor::SetRoomType(ERoomType NewRoomType)
+void ADoor::SetRoomType(const ERoomType NewRoomType)
 {
 	NextRoomType = NewRoomType;
 }
 
 void ADoor::OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (AMechaPawn* MechaPawn = Cast<AMechaPawn>(OtherActor))
+	const AMechaPawn* MechaPawn = Cast<AMechaPawn>(OtherActor);
+	if (MechaPawn == nullptr)
 	{
-		UPersistentManager* PM = GetGameInstance()->GetSubsystem<UPersistentManager>();
-		if (PM)
-		{
-			//Save the Player's state before progressing
-			PM->SaveMechaState(
-				MechaPawn->GetCurrentScrapCount(),
-				MechaPawn->GetCurrentHealth(),
-				MechaPawn->GetCurrentTier().TierNumber,
-				MechaPawn->GetCurrentWeaponLoadout()
-				);
-			PM->AdvanceRoom();
-			
-			if (UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance()))
-			{
-				if (const TSoftObjectPtr<UWorld>* LevelPtr = GI->RoomLevels.Find(NextRoomType))
-				{
-					UGameplayStatics::OpenLevelBySoftObjectPtr(this, *LevelPtr);
-				}
-				else
-				{
-					UE_LOG(LogTemp, Error, TEXT("No Level assigned for Room Type: %d"), NextRoomType);
-				}
-			}
-		}
+		return;
+	}
+	
+	UPersistentManager* PersistentManager = GetGameInstance()->GetSubsystem<UPersistentManager>();
+	if (PersistentManager == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("No Persistent Manager"));
+		return;
+	}
+	
+	const UScrapItGameInstance* GameInstance = Cast<UScrapItGameInstance>(GetGameInstance());
+	if (GameInstance == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("No Game Instance"));
+		return;
+	}
+	
+	//Save the Player's state before progressing
+	PersistentManager->SaveMechaState(
+		MechaPawn->GetCurrentScrapCount(),
+		MechaPawn->GetCurrentHealth(),
+		MechaPawn->GetCurrentTier().TierNumber,
+		MechaPawn->GetCurrentWeaponLoadout()
+		);
+	
+	//Advance the room in the persistent manager
+	PersistentManager->AdvanceRoom();
+	
+	//Load the next level based on the room type
+	if (const TSoftObjectPtr<UWorld>* LevelPtr = GameInstance->RoomLevels.Find(NextRoomType))
+	{
+		UGameplayStatics::OpenLevelBySoftObjectPtr(this, *LevelPtr);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("No Level assigned for Room Type: %d"), NextRoomType);
 	}
 }
 

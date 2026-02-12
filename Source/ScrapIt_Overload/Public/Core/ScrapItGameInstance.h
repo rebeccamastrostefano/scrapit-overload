@@ -6,7 +6,7 @@
 #include "Rooms/EnemyPool.h"
 #include "Engine/GameInstance.h"
 #include "Rooms/RoomPool.h"
-#include "Scraps/ScrapActor.h"
+#include "Scraps/ScrapBase.h"
 #include "Weapons/WeaponBase.h"
 #include "Weapons/WeaponLevels.h"
 #include "ScrapItGameInstance.generated.h"
@@ -21,7 +21,7 @@ class SCRAPIT_OVERLOAD_API UScrapItGameInstance : public UGameInstance
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Global References")
-	TMap<EScrapType, TSubclassOf<AScrapActor>> ScrapTypeToBP;
+	TMap<EScrapType, TSubclassOf<AScrapBase>> ScrapTypeToBP;
 	
 	UPROPERTY(EditAnywhere, Category = "Global References")
 	TMap<EScrapType, UWeaponLevels*> WeaponLevels;
@@ -39,7 +39,7 @@ public:
 	TMap<ERoomType, TSoftObjectPtr<UWorld>> RoomLevels;
 	
 	UFUNCTION()
-	UEnemyPool* GetEnemyPool(const int32 Rank)
+	UEnemyPool* GetEnemyPool(const int32 Rank) const
 	{
 		return RankToEnemyPool.Contains(Rank) ? RankToEnemyPool[Rank] : nullptr;
 	}

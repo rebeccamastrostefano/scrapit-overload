@@ -5,18 +5,18 @@
 #include "CoreMinimal.h"
 #include "Projectile.h"
 #include "Weapons/WeaponBase.h"
-#include "Weapon_NailGun.generated.h"
+#include "WeaponNailGun.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class SCRAPIT_OVERLOAD_API AWeapon_NailGun : public AWeaponBase
+class SCRAPIT_OVERLOAD_API AWeaponNailGun : public AWeaponBase
 {
 	GENERATED_BODY()
 	
 public:
-	AWeapon_NailGun();
+	AWeaponNailGun();
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Scraps/ScrapActor.h"
+#include "Scraps/ScrapGeneric.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "PersistentManager.generated.h"
 

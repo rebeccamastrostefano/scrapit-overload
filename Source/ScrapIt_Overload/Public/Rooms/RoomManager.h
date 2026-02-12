@@ -6,6 +6,8 @@
 #include "EnemyPool.h"
 #include "GameFramework/Actor.h"
 #include "RoomPool.h"
+#include "Core/ScrapItGameInstance.h"
+#include "Scraps/ScrapLootTable.h"
 #include "RoomManager.generated.h"
 
 UENUM()
@@ -51,16 +53,16 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Room Configuration")
 	float MaxSpawnDistance = 2500.f;
 	
-	//Functions
-	void ApplyRoomModifiers();
-	void SpawnEnemies();
-	FVector GetRandomSpawnPoint();
-	void RegisterEnemy(AActor* Enemy);
-	void SpawnRandomScrapsAtLocation(FVector Location, int32 Amount);
-	ERoomType GetRandomRoomType();
-	void CompleteRoom();
+	UPROPERTY(EditAnywhere, Category = "Room Configuration")
+	float SpawnInterval = 0.15f;
 	
-	//Data
+	UPROPERTY(EditAnywhere, Category = "Room Configuration")
+	UScrapLootTable* LootTable;
+	
+	UPROPERTY(EditAnywhere, Category = "Room Configuration")
+	float DoorOffset = 500.f;
+	
+	//Room State
 	UPROPERTY(VisibleAnywhere, Category = "Room State")
 	ERoomState RoomState = ERoomState::Active;
 	
@@ -71,15 +73,32 @@ protected:
 	UEnemyPool* ActiveEnemyPool;
 	
 	int32 EnemiesToSpawn = 0;
+	int32 PendingClusters;
 	int32 EnemyCount = 0;
-	FTimerHandle SpawnTimerHandle;
+	FTimerHandle SpawnQueueTimerHandle;
 	
+	UPROPERTY()
+	UScrapItGameInstance* GameInstance;
+	
+	//Functions
+	void ApplyRoomModifiers();
+	void CompleteRoom();
+	
+	void ProcessSpawnQueue();
+	void StartSpawnEnemies();
+	void SpawnEnemyCluster();
+	
+	void RegisterEnemy(AActor* Enemy);
+	void SpawnRandomScrapsAtLocation(const FVector Location, const int32 BaseDropAmount) const;
+	
+	//Helpers
+	FVector GetRandomSpawnPoint() const;
+	FVector GetRandomClusterMemberSpawnPoint(const FVector& Center) const;
 
 public:	
-	//Objectives handling
-	UFUNCTION()
-	void OnEnemyDeath(FVector Location, int32 ScrapsToSpawn);
-	
 	//Events
+	UFUNCTION()
+	void OnEnemyDeath(const FVector Location, const int32 BaseDropAmount);
+	
 	FOnRoomCompleted OnRoomCompleted;
 };

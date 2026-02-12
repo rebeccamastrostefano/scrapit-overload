@@ -4,6 +4,7 @@
 #include "Mecha/WeaponSystemComponent.h"
 
 #include "Core/ScrapItGameInstance.h"
+#include "Scraps/ScrapWeapon.h"
 
 // Sets default values for this component's properties
 UWeaponSystemComponent::UWeaponSystemComponent()
@@ -89,10 +90,10 @@ void UWeaponSystemComponent::DropWeaponOnSocket(const EWeaponSocket Socket)
 		if (GameInstance->ScrapTypeToBP.Contains(OldWeaponData.ScrapWeaponType))
 		{
 			//Drop the old weapon on ground as scrap
-			const TSubclassOf<AScrapActor> OldWeaponScrapClass = GameInstance->ScrapTypeToBP[OldWeaponData.ScrapWeaponType];
-			if (AScrapActor* WeaponScrap = GetWorld()->SpawnActor<AScrapActor>(OldWeaponScrapClass, GetOwner()->GetActorTransform()))
+			const TSubclassOf<AScrapBase> OldWeaponScrapClass = GameInstance->ScrapTypeToBP[OldWeaponData.ScrapWeaponType];
+			if (AScrapWeapon* WeaponScrap = GetWorld()->SpawnActor<AScrapWeapon>(OldWeaponScrapClass, GetOwner()->GetActorTransform()))
 			{
-				WeaponScrap->InitWeaponScrap(OldWeaponData.ScrapWeaponType, OldWeaponData.CurrentLevel);
+				WeaponScrap->InitWeaponData(OldWeaponData.ScrapWeaponType, OldWeaponData.CurrentLevel);
 			}
 		}
 		

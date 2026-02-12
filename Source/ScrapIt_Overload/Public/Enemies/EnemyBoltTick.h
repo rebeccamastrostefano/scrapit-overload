@@ -7,7 +7,7 @@
 #include "Interfaces/Damageable.h"
 #include "Components/SphereComponent.h"
 #include "Interfaces/Enemy.h"
-#include "Enemy_BoltTick.generated.h"
+#include "EnemyBoltTick.generated.h"
 
 class UFloatingPawnMovement;
 
@@ -21,13 +21,13 @@ enum class EState : uint8
 };
 
 UCLASS()
-class SCRAPIT_OVERLOAD_API AEnemy_BoltTick : public APawn, public IDamageable, public IEnemy
+class SCRAPIT_OVERLOAD_API AEnemyBoltTick : public APawn, public IDamageable, public IEnemy
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this pawn's properties
-	AEnemy_BoltTick();
+	AEnemyBoltTick();
 
 protected:
 	// Called when the game starts or when spawned

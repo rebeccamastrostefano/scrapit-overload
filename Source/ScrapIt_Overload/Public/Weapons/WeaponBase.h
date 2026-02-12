@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Scraps/ScrapActor.h"
+#include "Scraps/ScrapGeneric.h"
 #include "WeaponBase.generated.h"
 
 UCLASS()

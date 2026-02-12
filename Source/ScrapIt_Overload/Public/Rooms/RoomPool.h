@@ -36,4 +36,6 @@ class SCRAPIT_OVERLOAD_API URoomPool : public UDataAsset
 public:
 	UPROPERTY(EditAnywhere)
 	TArray<FRoomWeight> Rooms;
+	
+	ERoomType GetRandomRoomType();
 };

@@ -1,13 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Enemies/Enemy_BoltTick.h"
+#include "Enemies/EnemyBoltTick.h"
 
 #include "Mecha/MechaPawn.h"
 #include "GameFramework/FloatingPawnMovement.h"
 
 // Sets default values
-AEnemy_BoltTick::AEnemy_BoltTick()
+AEnemyBoltTick::AEnemyBoltTick()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -25,17 +25,17 @@ AEnemy_BoltTick::AEnemy_BoltTick()
 }
 
 // Called when the game starts or when spawned
-void AEnemy_BoltTick::BeginPlay()
+void AEnemyBoltTick::BeginPlay()
 {
 	Super::BeginPlay();
 	
 	CurrentHealth = BaseHealth;
 	MechaTarget = GetWorld()->GetFirstPlayerController()->GetPawn();
-	HurtboxSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy_BoltTick::OnHurtboxOverlap);
+	HurtboxSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemyBoltTick::OnHurtboxOverlap);
 }
 
 // Called every frame
-void AEnemy_BoltTick::Tick(float DeltaTime)
+void AEnemyBoltTick::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
@@ -57,6 +57,7 @@ void AEnemy_BoltTick::Tick(float DeltaTime)
 					return;
 				}
 			
+				//Make enemy move towards Mecha
 				AddMovementInput(Direction, 1.0f);
 				break;
 			case EState::ES_Cooldown:
@@ -80,14 +81,14 @@ void AEnemy_BoltTick::Tick(float DeltaTime)
 	}
 }
 
-void AEnemy_BoltTick::StartAttack()
+void AEnemyBoltTick::StartAttack()
 {
 	CurrentState = EState::ES_Attacking;
 	MovementComp->StopMovementImmediately();
-	GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemy_BoltTick::ExecuteAttack, 0.2f, false);
+	GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemyBoltTick::ExecuteAttack, 0.2f, false);
 }
 
-void AEnemy_BoltTick::ExecuteAttack()
+void AEnemyBoltTick::ExecuteAttack()
 {
 	FVector const AttackDirection = (MechaTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	MovementComp->Velocity = AttackDirection * AttackForce;
@@ -95,16 +96,16 @@ void AEnemy_BoltTick::ExecuteAttack()
 	GetWorldTimerManager().SetTimer(AttackTimer, [this]()
 	{
 		CurrentState = EState::ES_Cooldown;
-		GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemy_BoltTick::ResetMovement, AttackCooldown, false);
+		GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemyBoltTick::ResetMovement, AttackCooldown, false);
 	}, 0.2f, false);
 }
 
-void AEnemy_BoltTick::ResetMovement()
+void AEnemyBoltTick::ResetMovement()
 {
 	CurrentState = EState::ES_Chasing;
 }
 
-void AEnemy_BoltTick::OnHurtboxOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AEnemyBoltTick::OnHurtboxOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (OtherActor != this && !OtherActor->Implements<UEnemy>())
 	{
@@ -116,38 +117,35 @@ void AEnemy_BoltTick::OnHurtboxOverlap(UPrimitiveComponent* OverlappedComp, AAct
 	}
 }
 
-void AEnemy_BoltTick::TakeDamage(float DamageAmount)
+void AEnemyBoltTick::TakeDamage(float DamageAmount)
 {
 	CurrentHealth -= DamageAmount;
+	
+	//knockback slightly
+	FVector const KnockbackDirection = (GetActorLocation() - MechaTarget->GetActorLocation()).GetSafeNormal();
+	CurrentState = EState::ES_Hurt;
+	MovementComp->StopMovementImmediately();
+	GetWorldTimerManager().SetTimer(AttackTimer, [this, KnockbackDirection]() 
+	{ 
+		MovementComp->Velocity = KnockbackDirection * KnockbackForce;
+		GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemyBoltTick::ResetMovement, AttackCooldown, false);
+	}, 0.1f, false);
 	
 	if (CurrentHealth <= 0)
 	{
 		Die();
 	}
-	else
-	{
-		//knockback slightly
-		FVector const KnockbackDirection = (GetActorLocation() - MechaTarget->GetActorLocation()).GetSafeNormal();
-		CurrentState = EState::ES_Hurt;
-		MovementComp->StopMovementImmediately();
-		GetWorldTimerManager().SetTimer(AttackTimer, [this, KnockbackDirection]() 
-			{ 
-				MovementComp->Velocity = KnockbackDirection * KnockbackForce;
-				GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemy_BoltTick::ResetMovement, AttackCooldown, false);
-			}, 0.1f, false);
-		
-	}
 }
 
-void AEnemy_BoltTick::Die()
+void AEnemyBoltTick::Die()
 {
 	OnDeath.ExecuteIfBound(GetActorLocation(), ScrapDrop);
 	Destroy();
 }
 
-void AEnemy_BoltTick::RegisterToRoomManager(ARoomManager* RoomManager)
+void AEnemyBoltTick::RegisterToRoomManager(ARoomManager* RoomManager)
 {
 	OnDeath.BindUObject(RoomManager, &ARoomManager::OnEnemyDeath);
-	RoomManager->OnRoomCompleted.AddDynamic(this, &AEnemy_BoltTick::Die);
+	RoomManager->OnRoomCompleted.AddDynamic(this, &AEnemyBoltTick::Die);
 }
 

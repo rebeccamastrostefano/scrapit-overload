@@ -5,16 +5,16 @@
 #include "CoreMinimal.h"
 #include "WeaponBase.h"
 #include "GameFramework/Actor.h"
-#include "Weapon_Screws.generated.h"
+#include "WeaponScrews.generated.h"
 
 UCLASS()
-class SCRAPIT_OVERLOAD_API AWeapon_Screws : public AWeaponBase
+class SCRAPIT_OVERLOAD_API AWeaponScrews : public AWeaponBase
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	AWeapon_Screws();
+	AWeaponScrews();
 
 protected:
 	// Called when the game starts or when spawned

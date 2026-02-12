@@ -5,22 +5,25 @@
 
 FEnemyDetails UEnemyPool::GetRandomEnemyBasedOnChance()
 {
-	float TotalChances = 0.f;
-	for (const FEnemyDetails& Details : Enemies)
+	const float TotalChances = Algo::Accumulate(Enemies, 0.f, [](float Sum, const FEnemyDetails& Details)
 	{
-		TotalChances += Details.SpawnChance;
-	}
+		return Sum + Details.SpawnChance;
+	});
 	
-	float Random = FMath::FRandRange(0.f, TotalChances);
-	float ChanceSum = 0.f;
-	for (const FEnemyDetails& Details : Enemies)
+	if (TotalChances > 0.f)
 	{
-		ChanceSum += Details.SpawnChance;
-		if (Random <= ChanceSum)
+		const float Random = FMath::FRandRange(0.f, TotalChances);
+		float ChanceSum = 0.f;
+		
+		for (const FEnemyDetails& Details : Enemies)
 		{
-			return Details;
+			ChanceSum += Details.SpawnChance;
+			if (Random <= ChanceSum)
+			{
+				return Details;
+			}
 		}
 	}
 	
-	return Enemies[0];
+	return Enemies.Num() > 0 ? Enemies[0] : FEnemyDetails();
 }

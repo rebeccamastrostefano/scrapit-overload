@@ -24,8 +24,5 @@ class SCRAPIT_OVERLOAD_API IEnemy
 	GENERATED_BODY()
 
 public:
-	float BaseHealth;
-	float Damage;
-	int32 ScrapDrop;
 	virtual void RegisterToRoomManager(ARoomManager* RoomManager) = 0;
 };

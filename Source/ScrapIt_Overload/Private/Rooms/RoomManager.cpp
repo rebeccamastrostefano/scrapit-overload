@@ -2,10 +2,10 @@
 
 #include "Rooms/RoomManager.h"
 #include "Rooms/Door.h"
-#include "Scraps/ScrapActor.h"
 #include "Interfaces/Enemy.h"
 #include "Core/PersistentManager.h"
 #include "Core/ScrapItGameInstance.h"
+#include "Scraps/ScrapFactory.h"
 
 // Sets default values
 ARoomManager::ARoomManager()
@@ -21,19 +21,26 @@ void ARoomManager::BeginPlay()
 	Super::BeginPlay();
 	EnemiesToSpawn = BaseEnemyCount;
 	
-	if (UPersistentManager* PM = GetGameInstance()->GetSubsystem<UPersistentManager>())
+	const UPersistentManager* PersistentManager = GetGameInstance()->GetSubsystem<UPersistentManager>();
+	if (PersistentManager == nullptr)
 	{
-		if (UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance()))
-		{
-			CurrentRoomRank = PM->GetRoomRank();
-			ActiveEnemyPool = GI->GetEnemyPool(CurrentRoomRank);
-		}
+		UE_LOG(LogTemp, Error, TEXT("RoomManager: PersistentManager is NULL!"));
 	}
+	
+	GameInstance = GetGameInstance<UScrapItGameInstance>();
+	if (GameInstance == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("RoomManager: GameInstance is NOT UScrapItGameInstance!"));
+		return;
+	}
+	
+	CurrentRoomRank = PersistentManager->GetRoomRank();
+	ActiveEnemyPool = GameInstance->GetEnemyPool(CurrentRoomRank);
 	
 	if (RoomType == ERoomType::Standard)
 	{
 		ApplyRoomModifiers();
-		SpawnEnemies();
+		StartSpawnEnemies();
 	}
 }
 
@@ -46,8 +53,8 @@ void ARoomManager::ApplyRoomModifiers()
 		switch (Modifier)
 		{
 		case EnemyBoost:
-			//More enemies
-			EnemiesToSpawn *= CurrentRoomRank;
+			//Double the enemies
+			EnemiesToSpawn *= 2;
 			break;
 		case OilHazard:
 			//TODO: Spawn oil puddles
@@ -59,45 +66,95 @@ void ARoomManager::ApplyRoomModifiers()
 }
 
 //Enemy Spawning
-void ARoomManager::SpawnEnemies()
+void ARoomManager::StartSpawnEnemies()
 {
-	if (!ActiveEnemyPool || ActiveEnemyPool->Enemies.Num() == 0)
+	if (!ActiveEnemyPool || ActiveEnemyPool->Enemies.Num() <= 0)
 	{
 		return;
 	}
 	
-	for (int32 i = 0; i < EnemiesToSpawn; i++)
+	PendingClusters += EnemiesToSpawn;
+	
+	if (!GetWorldTimerManager().IsTimerActive(SpawnQueueTimerHandle))
 	{
-		FEnemyDetails EnemyDetails = ActiveEnemyPool->GetRandomEnemyBasedOnChance();
-		FVector SpawnLocation = GetRandomSpawnPoint();
+		GetWorldTimerManager().SetTimer(SpawnQueueTimerHandle, this, &ARoomManager::ProcessSpawnQueue, SpawnInterval, true);
+	}
+}
+
+void ARoomManager::ProcessSpawnQueue()
+{
+	if (PendingClusters <= 0)
+	{
+		GetWorldTimerManager().ClearTimer(SpawnQueueTimerHandle);
+		return;
+	}
+	
+	SpawnEnemyCluster();
+	
+	PendingClusters--;
+	
+	if (PendingClusters <= 0)
+	{
+		GetWorldTimerManager().ClearTimer(SpawnQueueTimerHandle);
+		UE_LOG(LogTemp, Warning, TEXT("All enemies spawned!"));
+	}
+}
+
+void ARoomManager::SpawnEnemyCluster()
+{
+	const FEnemyDetails EnemyDetails = ActiveEnemyPool->GetRandomEnemyBasedOnChance();
+	if (!EnemyDetails.EnemyClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("RoomManager: Enemy Class is NULL!"));
+		return;
+	}
 		
-		for (int32 e = 0; e < EnemyDetails.ClusterCount; e++)
-		{
-			FVector SpawnLoc = SpawnLocation + (FMath::VRand() * 100.f);
-			SpawnLoc.Z = 100.f;
+	const FVector CenterLocation = GetRandomSpawnPoint();
+		
+	for (int32 i = 0; i < EnemyDetails.ClusterCount; i++)
+	{
+		FVector FinalLocation = GetRandomClusterMemberSpawnPoint(CenterLocation);
 			
-			AActor* Enemy = GetWorld()->SpawnActor<AActor>(EnemyDetails.EnemyClass, SpawnLoc, FRotator::ZeroRotator);
+		if (AActor* Enemy = GetWorld()->SpawnActor<AActor>(EnemyDetails.EnemyClass, FinalLocation, FRotator::ZeroRotator))
+		{
 			RegisterEnemy(Enemy);
 			EnemyCount++;
 		}
 	}
 }
 
-FVector ARoomManager::GetRandomSpawnPoint()
+FVector ARoomManager::GetRandomSpawnPoint() const
 {
-	APawn* Player = GetWorld()->GetFirstPlayerController()->GetPawn();
+	const APawn* Mecha = GetWorld()->GetFirstPlayerController()->GetPawn();
 	
-	if (!Player)
+	if (!Mecha)
 	{
 		return FVector::ZeroVector;
 	}
 	
-	FVector RandomDir = FMath::VRand();
-	RandomDir.Z = 0.f;
+	FVector RandomDir = FVector(FMath::RandPointInCircle(150.f), 0.f);
 	RandomDir.Normalize();
 	
-	float Distance = FMath::RandRange(MinSpawnDistance, MaxSpawnDistance);
-	return Player->GetActorLocation() + (RandomDir * Distance);
+	const float Distance = FMath::RandRange(MinSpawnDistance, MaxSpawnDistance);
+	return Mecha->GetActorLocation() + (RandomDir * Distance);
+}
+
+FVector ARoomManager::GetRandomClusterMemberSpawnPoint(const FVector& Center) const
+{
+	const FVector Offset = FVector(FMath::RandPointInCircle(150.f), 0.f);
+	const FVector FinalLocation = Center + Offset;
+	
+	//Find ground to get Z offset
+	FHitResult Hit;
+	const FVector StartTrace = FinalLocation + FVector(0, 0, 500.f);
+	const FVector EndTrace = FinalLocation - FVector(0, 0, 500.f);
+	
+	if (GetWorld()->LineTraceSingleByChannel(Hit, StartTrace, EndTrace, ECC_Visibility))
+	{
+		return Hit.Location + FVector(0, 0, 50.f);
+	}
+	
+	return FinalLocation;
 }
 
 void ARoomManager::RegisterEnemy(AActor* Enemy)
@@ -114,7 +171,7 @@ void ARoomManager::RegisterEnemy(AActor* Enemy)
 }
 
 //Objective Management
-void ARoomManager::OnEnemyDeath(FVector Location, int32 ScrapsToSpawn)
+void ARoomManager::OnEnemyDeath(FVector Location, int32 BaseDropAmount)
 {
 	if (RoomType == ERoomType::Standard)
 	{
@@ -124,115 +181,49 @@ void ARoomManager::OnEnemyDeath(FVector Location, int32 ScrapsToSpawn)
 			CompleteRoom();
 		}
 	}
-	SpawnRandomScrapsAtLocation(Location, ScrapsToSpawn);
+	SpawnRandomScrapsAtLocation(Location, BaseDropAmount);
 }
 
 void ARoomManager::CompleteRoom()
 {
 	RoomState = ERoomState::Completed;
 	OnRoomCompleted.Broadcast();
-	GetWorldTimerManager().ClearTimer(SpawnTimerHandle);
+	GetWorldTimerManager().ClearTimer(SpawnQueueTimerHandle);
 	
-	const UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance());
-	
-	if (const TSubclassOf<AActor> DoorBP = GI->DoorBP)
-	{
-		//Spawn the three doors at the correct positions
-		float DoorOffset = -500.f;
-		for (int32 i = 0; i < 3; i++)
-		{
-			FVector SpawnLoc = FVector(GetActorLocation().X, DoorOffset, GetActorLocation().Z);
-			if (ADoor* Door = Cast<ADoor>(GetWorld()->SpawnActor<AActor>(DoorBP, SpawnLoc, FRotator::ZeroRotator)))
-			{
-				Door->SetRoomType(GetRandomRoomType());
-				UE_LOG(LogTemp, Warning, TEXT("Spawning door at %s"), *SpawnLoc.ToString());
-			}
-			DoorOffset += 500.f;
-		}
-	}
-}
-
-//Scrap Spawning
-void ARoomManager::SpawnRandomScrapsAtLocation(FVector Location, int32 Amount)
-{
-	//Safety Checks
-	UWorld* World = GetWorld();
-	if (!World)
-	{
-		return;
-	}
-	
-	const UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance());
-	if (!GI)
+	if (GameInstance == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("RoomManager: GameInstance is NOT UScrapItGameInstance!"));
 		return;
 	}
 	
-
-	TSubclassOf<AActor> const BasicScrapBlueprint = GI->ScrapTypeToBP[EScrapType::Basic];
-	if (!BasicScrapBlueprint)
+	if (const TSubclassOf<AActor> DoorBP = GameInstance->DoorBP)
 	{
-		UE_LOG(LogTemp, Error, TEXT("ScrapSubsystem: Missing Scrap Blueprint"));
+		//Spawn the three doors at the correct positions
+		float CurrentDoorOffset = DoorOffset;
+		for (int32 i = 0; i < 3; i++)
+		{
+			FVector SpawnLoc = FVector(GetActorLocation().X, DoorOffset, GetActorLocation().Z);
+			if (ADoor* Door = Cast<ADoor>(GetWorld()->SpawnActor<AActor>(DoorBP, SpawnLoc, FRotator::ZeroRotator)))
+			{
+				Door->SetRoomType(GameInstance->RoomPool->GetRandomRoomType());
+			}
+			CurrentDoorOffset += DoorOffset;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("RoomManager: No Door BP Assigned!"));
+	}
+}
+
+//Scrap Spawning
+void ARoomManager::SpawnRandomScrapsAtLocation(const FVector Location, const int32 BaseDropAmount) const
+{
+	if (LootTable == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("RoomManager: Scrap Loot Table is NULL!"));
 		return;
 	}
 	
-	//Spawn Scraps
-	UE_LOG(LogTemp, Warning, TEXT("Attempting Spawning %d scraps"), Amount);
-		
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	
-	for (int i = 0; i < Amount; i++)
-	{
-		//Spread scraps randomly and add a slight lift on Z so they don't spawn inside the floor
-		FVector RandomOffset = FMath::VRand() * 50.f;
-		RandomOffset.Z = 0.f;
-		const FVector FinalLocation = Location + RandomOffset + FVector(0, 0, 40.f);
-		
-		const float RandomRotation = FMath::RandRange(0.f, 360.f);
-		const FRotator Rotation = FRotator(RandomRotation, RandomRotation, RandomRotation);
-		
-		if (AScrapActor* NewScrap = World->SpawnActor<AScrapActor>(BasicScrapBlueprint, FinalLocation, Rotation, SpawnParams))
-		{
-			//TODO: randomize scrap type
-			NewScrap->SetScrapType(EScrapType::Basic);
-			
-			//Slight push up for pop effect
-			if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(NewScrap->GetRootComponent()))
-			{
-				FVector RandomImpulse = FMath::VRand() * 300.f;
-				Root->AddImpulse(RandomImpulse + FVector(0,0,500), NAME_None, true);
-			}
-		}
-	}
+	UScrapFactory::SpawnScraps(this, Location, LootTable, BaseDropAmount);
 }
-
-ERoomType ARoomManager::GetRandomRoomType()
-{
-	if (UScrapItGameInstance* GI = Cast<UScrapItGameInstance>(GetGameInstance()))
-	{
-		if (GI->RoomPool && GI->RoomPool->Rooms.Num() > 0)
-		{
-			float TotalWeight = 0.f;
-			for (const auto& Room : GI->RoomPool->Rooms)
-			{
-				TotalWeight += Room.Weight;
-			}
-			
-			const float RandomValue = FMath::RandRange(0.f, TotalWeight);
-			float WeightSum = 0.f;
-			
-			for (const auto& Room : GI->RoomPool->Rooms)
-			{
-				WeightSum += Room.Weight;
-				if (RandomValue <= WeightSum)
-				{
-					return Room.Room;
-				}
-			}
-		}
-	}
-	return ERoomType::Standard;
-}
-

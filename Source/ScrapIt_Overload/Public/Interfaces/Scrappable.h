@@ -19,7 +19,6 @@ class IScrappable
 public:
 	virtual void OnMagnetPulled(AActor* MechaActor, float PullStrength, float PullRadius, float CollectionRadius) = 0;
 	virtual void OnMagnetReleased() = 0;
-	virtual void OnCollected() = 0;
 	
 	float BasePullSpeed = 1.0f;
 	float RiseHeight = 150.0f;

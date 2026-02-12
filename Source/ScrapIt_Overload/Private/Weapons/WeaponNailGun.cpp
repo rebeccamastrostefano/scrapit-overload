@@ -1,15 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Weapons/Weapon_NailGun.h"
+#include "Weapons/WeaponNailGun.h"
 
-AWeapon_NailGun::AWeapon_NailGun()
+AWeaponNailGun::AWeaponNailGun()
 {
 	FirePoint = CreateDefaultSubobject<USceneComponent>(TEXT("FirePoint"));
 	FirePoint->SetupAttachment(RootComponent);
 }
 
-void AWeapon_NailGun::Tick(float DeltaTime)
+void AWeaponNailGun::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
@@ -17,7 +17,7 @@ void AWeapon_NailGun::Tick(float DeltaTime)
 	TrackEnemy(DeltaTime);
 }
 
-void AWeapon_NailGun::Fire()
+void AWeaponNailGun::Fire()
 {
 	if (CurrentTarget && ProjectileBP)
 	{
@@ -34,7 +34,7 @@ void AWeapon_NailGun::Fire()
 	}
 }
 
-void AWeapon_NailGun::ApplyUniquePowerUp()
+void AWeaponNailGun::ApplyUniquePowerUp()
 {
 	switch (CurrentWeaponLevel)
 	{
