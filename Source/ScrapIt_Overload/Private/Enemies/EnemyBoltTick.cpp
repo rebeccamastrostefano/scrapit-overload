@@ -30,6 +30,7 @@ void AEnemyBoltTick::BeginPlay()
 	Super::BeginPlay();
 	
 	CurrentHealth = BaseHealth;
+	CurrentState = EState::Chasing;
 	MechaTarget = GetWorld()->GetFirstPlayerController()->GetPawn();
 	HurtboxSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemyBoltTick::OnHurtboxOverlap);
 }
@@ -49,7 +50,7 @@ void AEnemyBoltTick::Tick(float DeltaTime)
 
 		switch (CurrentState)
 		{
-			case EState::ES_Chasing:
+			case EState::Chasing:
 				//If the enemy is in the attack range, start attack
 				if (DistanceToMecha <= AttackRange)
 				{
@@ -60,16 +61,16 @@ void AEnemyBoltTick::Tick(float DeltaTime)
 				//Make enemy move towards Mecha
 				AddMovementInput(Direction, 1.0f);
 				break;
-			case EState::ES_Cooldown:
+			case EState::Cooldown:
 				//Enemy backs up to attack again
 				if (DistanceToMecha <= AttackRange)
 				{
 					AddMovementInput(Direction, -1.0f);
 				}
 				break;
-			case EState::ES_Attacking:
+			case EState::Attacking:
 				break;
-			case EState::ES_Hurt:
+			case EState::Hurt:
 				break;
 			default: 
 				break;
@@ -83,7 +84,7 @@ void AEnemyBoltTick::Tick(float DeltaTime)
 
 void AEnemyBoltTick::StartAttack()
 {
-	CurrentState = EState::ES_Attacking;
+	CurrentState = EState::Attacking;
 	MovementComp->StopMovementImmediately();
 	GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemyBoltTick::ExecuteAttack, 0.2f, false);
 }
@@ -95,22 +96,22 @@ void AEnemyBoltTick::ExecuteAttack()
 	
 	GetWorldTimerManager().SetTimer(AttackTimer, [this]()
 	{
-		CurrentState = EState::ES_Cooldown;
+		CurrentState = EState::Cooldown;
 		GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemyBoltTick::ResetMovement, AttackCooldown, false);
 	}, 0.2f, false);
 }
 
 void AEnemyBoltTick::ResetMovement()
 {
-	CurrentState = EState::ES_Chasing;
+	CurrentState = EState::Chasing;
 }
 
 void AEnemyBoltTick::OnHurtboxOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor != this && !OtherActor->Implements<UEnemy>())
+	if (OtherActor != this && !OtherActor->GetClass()->IsChildOf(AEnemyBase::StaticClass()))
 	{
 		IDamageable* const MechaDamageable = Cast<IDamageable>(OtherActor);
-		if (MechaDamageable && CurrentState == EState::ES_Attacking)
+		if (MechaDamageable && CurrentState == EState::Attacking)
 		{
 			MechaDamageable->TakeDamage(Damage);
 		}
@@ -123,7 +124,7 @@ void AEnemyBoltTick::TakeDamage(float DamageAmount)
 	
 	//knockback slightly
 	FVector const KnockbackDirection = (GetActorLocation() - MechaTarget->GetActorLocation()).GetSafeNormal();
-	CurrentState = EState::ES_Hurt;
+	CurrentState = EState::Hurt;
 	MovementComp->StopMovementImmediately();
 	GetWorldTimerManager().SetTimer(AttackTimer, [this, KnockbackDirection]() 
 	{ 
@@ -135,17 +136,5 @@ void AEnemyBoltTick::TakeDamage(float DamageAmount)
 	{
 		Die();
 	}
-}
-
-void AEnemyBoltTick::Die()
-{
-	OnDeath.ExecuteIfBound(GetActorLocation(), ScrapDrop);
-	Destroy();
-}
-
-void AEnemyBoltTick::RegisterToRoomManager(ARoomManager* RoomManager)
-{
-	OnDeath.BindUObject(RoomManager, &ARoomManager::OnEnemyDeath);
-	RoomManager->OnRoomCompleted.AddDynamic(this, &AEnemyBoltTick::Die);
 }
 

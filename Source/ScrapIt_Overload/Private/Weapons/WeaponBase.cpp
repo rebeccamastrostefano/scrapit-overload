@@ -4,8 +4,8 @@
 #include "Weapons/WeaponBase.h"
 
 #include "Core/ScrapItGameInstance.h"
+#include "Enemies/EnemyBase.h"
 #include "Engine/OverlapResult.h"
-#include "Interfaces/Enemy.h"
 
 // Sets default values
 AWeaponBase::AWeaponBase()
@@ -55,7 +55,7 @@ AActor* AWeaponBase::FindNearestEnemy() const
 		AActor* const OtherActor = Result.GetActor();
 		
 		//Check for interface
-		if (OtherActor == nullptr || !OtherActor->Implements<UEnemy>())
+		if (OtherActor == nullptr || !OtherActor->GetClass()->IsChildOf(AEnemyBase::StaticClass()))
 		{
 			continue;
 		}

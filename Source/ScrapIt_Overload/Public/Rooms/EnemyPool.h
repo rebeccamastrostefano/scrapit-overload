@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Enemies/EnemyBase.h"
 #include "Engine/DataAsset.h"
 #include "EnemyPool.generated.h"
 
@@ -12,7 +13,7 @@ struct FEnemyDetails
 	GENERATED_BODY()
 	
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<AActor> EnemyClass;
+	TSubclassOf<AEnemyBase> EnemyClass;
 	
 	UPROPERTY(EditAnywhere)
 	int32 ClusterCount = 1;

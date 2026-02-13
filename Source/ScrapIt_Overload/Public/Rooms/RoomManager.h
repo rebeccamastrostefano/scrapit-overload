@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EnemyPool.h"
+#include "EnemySpawnerComponent.h"
 #include "GameFramework/Actor.h"
 #include "RoomPool.h"
 #include "Core/ScrapItGameInstance.h"
@@ -62,6 +62,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Room Configuration")
 	float DoorOffset = 500.f;
 	
+	UPROPERTY()
+	UEnemySpawnerComponent* EnemySpawner;
+	
 	//Room State
 	UPROPERTY(VisibleAnywhere, Category = "Room State")
 	ERoomState RoomState = ERoomState::Active;
@@ -70,35 +73,19 @@ protected:
 	int32 CurrentRoomRank = 1;
 	
 	UPROPERTY()
-	UEnemyPool* ActiveEnemyPool;
-	
-	int32 EnemiesToSpawn = 0;
-	int32 PendingClusters;
-	int32 EnemyCount = 0;
-	FTimerHandle SpawnQueueTimerHandle;
-	
-	UPROPERTY()
 	UScrapItGameInstance* GameInstance;
 	
 	//Functions
 	void ApplyRoomModifiers();
+	
+	UFUNCTION()
+	void OnEnemyDeath(FVector Location, int32 BaseDropAmount);
+	
+	UFUNCTION()
 	void CompleteRoom();
 	
-	void ProcessSpawnQueue();
-	void StartSpawnEnemies();
-	void SpawnEnemyCluster();
-	
-	void RegisterEnemy(AActor* Enemy);
-	void SpawnRandomScrapsAtLocation(const FVector Location, const int32 BaseDropAmount) const;
-	
-	//Helpers
-	FVector GetRandomSpawnPoint() const;
-	FVector GetRandomClusterMemberSpawnPoint(const FVector& Center) const;
+	void SpawnDoors();
 
-public:	
-	//Events
-	UFUNCTION()
-	void OnEnemyDeath(const FVector Location, const int32 BaseDropAmount);
-	
+public:
 	FOnRoomCompleted OnRoomCompleted;
 };
