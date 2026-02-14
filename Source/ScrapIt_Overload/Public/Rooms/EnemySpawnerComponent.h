@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "EnemyPool.h"
+#include "RoomLayout.h"
 #include "EnemySpawnerComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemiesCleared);
@@ -25,6 +26,7 @@ protected:
 
 	// Helpers
 	FVector GetRandomSpawnPoint() const;
+	FVector GetValidNavMeshPoint(const FVector& Point) const;
 	FVector GetRandomClusterMemberSpawnPoint(const FVector& Center) const;
 	
 	UFUNCTION()
@@ -32,6 +34,9 @@ protected:
 
 	UPROPERTY()
 	UEnemyPool* ActivePool;
+	
+	UPROPERTY()
+	ARoomLayout* CurrentRoomLayout;
 
 	FTimerHandle SpawnQueueTimerHandle;
 	int32 PendingClusters = 0;
@@ -47,6 +52,11 @@ public:
 	UEnemyPool* ActiveEnemyPool;
 
 	void RequestSpawnWave(UEnemyPool* Pool, const int32 TotalClusters, float Interval);
+	
+	FORCEINLINE void SetRoomLayout(ARoomLayout* RoomLayout) 
+	{
+		CurrentRoomLayout = RoomLayout;
+	}
 
 	//Events
 	UPROPERTY(BlueprintAssignable)

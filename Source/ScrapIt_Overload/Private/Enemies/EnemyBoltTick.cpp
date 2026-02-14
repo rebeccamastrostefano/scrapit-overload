@@ -3,6 +3,7 @@
 
 #include "Enemies/EnemyBoltTick.h"
 
+#include "AIController.h"
 #include "Mecha/MechaPawn.h"
 #include "GameFramework/FloatingPawnMovement.h"
 
@@ -11,6 +12,8 @@ AEnemyBoltTick::AEnemyBoltTick()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	
 	BoltTickMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BoltTickMesh"));
 	RootComponent = BoltTickMesh;
@@ -31,8 +34,22 @@ void AEnemyBoltTick::BeginPlay()
 	
 	CurrentHealth = BaseHealth;
 	CurrentState = EState::Chasing;
+	
+	//Get Mecha Target
 	MechaTarget = GetWorld()->GetFirstPlayerController()->GetPawn();
+	
+	//Get the AIController, if null, create one and possess the enemy
+	AIController = Cast<AAIController>(GetController());
+	if (AIController == nullptr)
+	{
+		AIController = GetWorld()->SpawnActor<AAIController>(AIControllerClass);
+		AIController->Possess(this);
+	}
+	
 	HurtboxSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemyBoltTick::OnHurtboxOverlap);
+	
+	//Start Navigation Update
+	GetWorldTimerManager().SetTimer(NavigationTimer, this, &AEnemyBoltTick::UpdateNavigation, NavigationUpdateRate, true);
 }
 
 // Called every frame
@@ -40,52 +57,59 @@ void AEnemyBoltTick::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (MechaTarget)
+	if (MechaTarget == nullptr || CurrentHealth <= 0)
 	{
-		//Get the direction between the enemy and the mecha and apply rotation so it's looking at us
-		FVector const Direction = (MechaTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-		SetActorRotation(Direction.Rotation());
-		
-		float const DistanceToMecha = FVector::Distance(GetActorLocation(), MechaTarget->GetActorLocation());
+		return;
+	}
+	
 
-		switch (CurrentState)
+	UpdateRotation(DeltaTime);
+	
+	if (CurrentState == EState::Chasing)
+	{
+		const float Distance = FVector::Dist(GetActorLocation(), MechaTarget->GetActorLocation());
+		if (Distance <= AttackRange)
 		{
-			case EState::Chasing:
-				//If the enemy is in the attack range, start attack
-				if (DistanceToMecha <= AttackRange)
-				{
-					StartAttack();
-					return;
-				}
-			
-				//Make enemy move towards Mecha
-				AddMovementInput(Direction, 1.0f);
-				break;
-			case EState::Cooldown:
-				//Enemy backs up to attack again
-				if (DistanceToMecha <= AttackRange)
-				{
-					AddMovementInput(Direction, -1.0f);
-				}
-				break;
-			case EState::Attacking:
-				break;
-			case EState::Hurt:
-				break;
-			default: 
-				break;
+			StartAttack();
 		}
 	}
-	else
+	else if (CurrentState == EState::Cooldown)
 	{
-		UE_LOG(LogTemp, Error, TEXT("NO PLAYER"))
+		const FVector AwayDirection = (GetActorLocation() - MechaTarget->GetActorLocation()).GetSafeNormal();
+		AddMovementInput(AwayDirection, 0.6f);
+	}
+}
+
+void AEnemyBoltTick::UpdateRotation(const float DeltaTime)
+{
+	//If we are not moving, rotate towards Mecha
+	FVector Direction = (MechaTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+	SetActorRotation(FMath::RInterpTo(GetActorRotation(), Direction.Rotation(), DeltaTime, 5.f));
+}
+
+void AEnemyBoltTick::UpdateNavigation() const
+{
+	if (CurrentState == EState::Chasing && MechaTarget != nullptr && AIController != nullptr)
+	{
+		const float Distance = FVector::Dist(GetActorLocation(), MechaTarget->GetActorLocation());
+	
+		if (Distance > AttackRange)
+		{
+			AIController->MoveToActor(MechaTarget, 50.0f);
+		}
 	}
 }
 
 void AEnemyBoltTick::StartAttack()
 {
 	CurrentState = EState::Attacking;
+	
+	if (AIController != nullptr)
+	{
+		AIController->StopMovement();
+	}
 	MovementComp->StopMovementImmediately();
+	
 	GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemyBoltTick::ExecuteAttack, 0.2f, false);
 }
 
@@ -125,7 +149,12 @@ void AEnemyBoltTick::TakeDamage(float DamageAmount)
 	//knockback slightly
 	FVector const KnockbackDirection = (GetActorLocation() - MechaTarget->GetActorLocation()).GetSafeNormal();
 	CurrentState = EState::Hurt;
-	MovementComp->StopMovementImmediately();
+	
+	if (AIController != nullptr)
+	{
+		AIController->StopMovement();
+	}
+	
 	GetWorldTimerManager().SetTimer(AttackTimer, [this, KnockbackDirection]() 
 	{ 
 		MovementComp->Velocity = KnockbackDirection * KnockbackForce;
@@ -137,4 +166,3 @@ void AEnemyBoltTick::TakeDamage(float DamageAmount)
 		Die();
 	}
 }
-

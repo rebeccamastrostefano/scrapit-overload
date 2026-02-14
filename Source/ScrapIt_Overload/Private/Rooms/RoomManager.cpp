@@ -34,7 +34,7 @@ void ARoomManager::BeginPlay()
 	}
 	
 	//Register to Enemy Spawner Events
-	EnemySpawner->OnEnemyEliminated.AddDynamic(this, &ARoomManager::OnEnemyDeath);
+	EnemySpawner->OnEnemyEliminated.AddDynamic(this, &ARoomManager::HandleEnemyLoot);
 	EnemySpawner->OnEnemiesCleared.AddDynamic(this, &ARoomManager::CompleteRoom);
 	
 	CurrentRoomRank = PersistentManager->GetRoomRank();
@@ -42,11 +42,31 @@ void ARoomManager::BeginPlay()
 	
 	if (RoomType == ERoomType::Standard)
 	{
+		SpawnRoomLayout();
 		ApplyRoomModifiers();
 		if (Pool != nullptr)
 		{
 			EnemySpawner->RequestSpawnWave(Pool, BaseEnemyCount, SpawnInterval);
 		}
+	}
+}
+
+void ARoomManager::SpawnRoomLayout()
+{
+	if (RoomLayouts.Num() <= 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("RoomManager: No Room Layouts Found!"));
+		return;
+	}
+	
+	const int32 RandomIndex = FMath::RandRange(0, RoomLayouts.Num() - 1);
+	CurrentRoomLayout = GetWorld()->SpawnActor<ARoomLayout>(RoomLayouts[RandomIndex], GetActorLocation(), FRotator::ZeroRotator);
+	
+	if (CurrentRoomLayout != nullptr)
+	{
+		//Spawn obstacles in room
+		CurrentRoomLayout->GenerateObstacles(ObstaclePool);
+		EnemySpawner->SetRoomLayout(CurrentRoomLayout);
 	}
 }
 
@@ -72,7 +92,7 @@ void ARoomManager::ApplyRoomModifiers()
 }
 
 //Enemy Death
-void ARoomManager::OnEnemyDeath(FVector Location, int32 BaseDropAmount)
+void ARoomManager::HandleEnemyLoot(FVector Location, int32 BaseDropAmount)
 {
 	if (LootTable == nullptr)
 	{

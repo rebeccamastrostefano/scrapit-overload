@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "EnemySpawnerComponent.h"
+#include "RoomLayout.h"
 #include "GameFramework/Actor.h"
 #include "RoomPool.h"
 #include "Core/ScrapItGameInstance.h"
@@ -62,10 +63,19 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Room Configuration")
 	float DoorOffset = 500.f;
 	
+	UPROPERTY(EditAnywhere, Category = "Room Generation")
+	TArray<TSubclassOf<ARoomLayout>> RoomLayouts;
+	
+	UPROPERTY(EditAnywhere, Category = "Room Generation")
+	TArray<TSubclassOf<AActor>> ObstaclePool;
+	
 	UPROPERTY()
 	UEnemySpawnerComponent* EnemySpawner;
 	
 	//Room State
+	UPROPERTY()
+	ARoomLayout* CurrentRoomLayout;
+	
 	UPROPERTY(VisibleAnywhere, Category = "Room State")
 	ERoomState RoomState = ERoomState::Active;
 	
@@ -76,10 +86,11 @@ protected:
 	UScrapItGameInstance* GameInstance;
 	
 	//Functions
+	void SpawnRoomLayout();
 	void ApplyRoomModifiers();
 	
 	UFUNCTION()
-	void OnEnemyDeath(FVector Location, int32 BaseDropAmount);
+	void HandleEnemyLoot(FVector Location, int32 BaseDropAmount);
 	
 	UFUNCTION()
 	void CompleteRoom();

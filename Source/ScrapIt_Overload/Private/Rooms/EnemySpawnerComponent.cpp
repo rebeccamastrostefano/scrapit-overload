@@ -4,7 +4,7 @@
 #include "Rooms/EnemySpawnerComponent.h"
 
 #include "Enemies/EnemyBase.h"
-#include "Kismet/GameplayStatics.h"
+#include "NavigationSystem.h"
 
 // Sets default values for this component's properties
 UEnemySpawnerComponent::UEnemySpawnerComponent()
@@ -58,7 +58,7 @@ void UEnemySpawnerComponent::SpawnEnemyCluster()
 	const FEnemyDetails EnemyDetails = ActiveEnemyPool->GetRandomEnemyBasedOnChance();
 	if (EnemyDetails.EnemyClass == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("RoomManager: Enemy Class is NULL!"));
+		UE_LOG(LogTemp, Error, TEXT("EnemySpawner: Enemy Class is NULL!"));
 		return;
 	}
 	
@@ -91,18 +91,50 @@ void UEnemySpawnerComponent::OnEnemyDeath(FVector Location, int32 BaseDropAmount
 
 FVector UEnemySpawnerComponent::GetRandomSpawnPoint() const
 {
-	const APawn* Mecha = UGameplayStatics::GetPlayerPawn(this, 0);
+	if (CurrentRoomLayout == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("EnemySpawner: Room Layout is NULL!"));
+		return FVector::ZeroVector;
+	}
 	
-	if (!Mecha)
+	const UBoxComponent* SelectedZone = CurrentRoomLayout->GetRandomSpawnZone();
+	if (SelectedZone == nullptr)
 	{
 		return FVector::ZeroVector;
 	}
 	
-	FVector RandomDir = FVector(FMath::RandPointInCircle(150.f), 0.f);
-	RandomDir.Normalize();
+	//Get radom point inside zone
+	const FVector ZoneExtent = SelectedZone->GetScaledBoxExtent();
+	const FVector ZoneOrigin = SelectedZone->GetComponentLocation();
 	
-	const float Distance = FMath::RandRange(MinSpawnDistance, MaxSpawnDistance);
-	return Mecha->GetActorLocation() + (RandomDir * Distance);
+	const FVector RandomPoint = ZoneOrigin + FVector(
+		FMath::RandRange(-ZoneExtent.X, ZoneExtent.X),
+		FMath::RandRange(-ZoneExtent.Y, ZoneExtent.Y),
+		0.f
+	);
+	
+	return GetValidNavMeshPoint(RandomPoint);
+}
+
+FVector UEnemySpawnerComponent::GetValidNavMeshPoint(const FVector& Point) const
+{
+	const UNavigationSystemV1* NavigationSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	
+	if (NavigationSystem != nullptr)
+	{
+		FNavLocation Location;
+		if (NavigationSystem->ProjectPointToNavigation(Point, Location, FVector(200.f, 200.f, 500.f)))
+		{
+			return Location.Location;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("EnemySpawner: Navigation System is NULL!"))
+		return Point;
+	}
+	
+	return Point;
 }
 
 FVector UEnemySpawnerComponent::GetRandomClusterMemberSpawnPoint(const FVector& Center) const
