@@ -42,8 +42,14 @@ void ARoomManager::BeginPlay()
 	
 	if (RoomType == ERoomType::Standard)
 	{
+		//Scale up the enemy count based on room rank
+		BaseEnemyCount *= CurrentRoomRank;
+		
+		//Spawn the room layout and apply modifiers
 		SpawnRoomLayout();
 		ApplyRoomModifiers();
+		
+		//Spawn enemies in the room
 		if (Pool != nullptr)
 		{
 			EnemySpawner->RequestSpawnWave(Pool, BaseEnemyCount, SpawnInterval);

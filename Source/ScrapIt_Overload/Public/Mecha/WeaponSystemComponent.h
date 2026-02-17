@@ -9,6 +9,8 @@
 #include "WeaponSystemComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponAcquired, EScrapType, WeaponScrapType, int32, WeaponLevel);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponEquipped, FWeaponData, WeaponData);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponUpgraded, FWeaponData, WeaponData);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SCRAPIT_OVERLOAD_API UWeaponSystemComponent : public UActorComponent
@@ -43,6 +45,12 @@ public:
 	//Events
 	UPROPERTY(BlueprintAssignable, Category = "Mecha Weapons")
 	FOnWeaponAcquired OnWeaponAcquired;
+	
+	UPROPERTY(BlueprintAssignable, Category = "Mecha Weapons")
+	FOnWeaponEquipped OnWeaponEquipped;
+	
+	UPROPERTY(BlueprintAssignable, Category = "Mecha Weapons")
+	FOnWeaponUpgraded OnWeaponUpgraded;
 	
 	//Helpers
 	UFUNCTION(BlueprintPure, Category = "Mecha Helpers")

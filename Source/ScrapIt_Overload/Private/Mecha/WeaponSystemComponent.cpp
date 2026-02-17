@@ -54,9 +54,13 @@ void UWeaponSystemComponent::EquipWeaponTypeToSocket(const EScrapType WeaponScra
 	if (AWeaponBase* NewWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponBP, AttachSocket->GetComponentTransform(), SpawnInfo))
 	{
 		NewWeapon->AttachToComponent(AttachSocket, FAttachmentTransformRules::KeepWorldTransform);
-		WeaponLoadout.Add(FWeaponData{WeaponScrapType, WeaponLevel, Socket});
-		SocketsToWeapons.Add(Socket, NewWeapon);
 		NewWeapon->TryUpgrade(WeaponLevel); //Set the level of the weapon
+		
+		const FWeaponData WeaponData = {WeaponScrapType, WeaponLevel, Socket};
+		WeaponLoadout.Add(WeaponData);
+		SocketsToWeapons.Add(Socket, NewWeapon);
+		
+		OnWeaponEquipped.Broadcast(WeaponData);
 	}
 }
 
@@ -115,6 +119,7 @@ void UWeaponSystemComponent::UpgradeAllWeapons(FMassTier Tier)
 			if (Weapon->TryUpgrade(Tier.TierNumber))
 			{
 				Data.CurrentLevel = Tier.TierNumber;
+				OnWeaponUpgraded.Broadcast(Data);
 			}
 		}
 	}
