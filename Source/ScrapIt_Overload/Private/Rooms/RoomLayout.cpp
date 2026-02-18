@@ -3,6 +3,8 @@
 
 #include "Rooms/RoomLayout.h"
 
+#include "Core/ScrapItGameInstance.h"
+
 // Sets default values
 ARoomLayout::ARoomLayout()
 {
@@ -45,6 +47,35 @@ void ARoomLayout::GenerateObstacles(TArray<TSubclassOf<AActor>> ObstaclePool)
 			
 			const int32 RandomIndex = FMath::RandRange(0, ObstaclePool.Num() - 1);
 			GetWorld()->SpawnActor<AActor>(ObstaclePool[RandomIndex], Slot->GetComponentTransform(), Params);
+		}
+	}
+}
+
+void ARoomLayout::SpawnDoor() const
+{
+	//Get door location from a random door tag
+	const TArray<UActorComponent*> DoorSpawnPoints = GetComponentsByTag(USceneComponent::StaticClass(), "Door");
+	
+	if (DoorSpawnPoints.Num() > 0)
+	{
+		const int32 RandomIndex = FMath::RandRange(0, DoorSpawnPoints.Num() - 1);
+		const FVector SpawnLocation = Cast<USceneComponent>(DoorSpawnPoints[RandomIndex])->GetComponentLocation();
+		
+		const UScrapItGameInstance* GameInstance = Cast<UScrapItGameInstance>(GetGameInstance());
+		if (GameInstance == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("RoomLayout: GameInstance is NOT UScrapItGameInstance!"));
+			return;
+		}
+		
+		if (const TSubclassOf<AActor> DoorBP = GameInstance->DoorBP)
+		{
+			//Spawn door
+			GetWorld()->SpawnActor<AActor>(DoorBP, SpawnLocation, FRotator::ZeroRotator);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("RoomLayout: No Door BP assigned in GameInstance"));
 		}
 	}
 }

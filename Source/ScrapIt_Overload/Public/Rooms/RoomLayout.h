@@ -26,6 +26,7 @@ protected:
 	
 public:
 	void GenerateObstacles(TArray<TSubclassOf<AActor>> ObstaclePool);
+	void SpawnDoor() const;
 	
 	//Getters
 	UBoxComponent* GetRandomSpawnZone() const;

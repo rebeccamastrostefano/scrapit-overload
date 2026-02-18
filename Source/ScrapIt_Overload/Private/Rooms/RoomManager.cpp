@@ -116,34 +116,12 @@ void ARoomManager::CompleteRoom()
 	RoomState = ERoomState::Completed;
 	OnRoomCompleted.Broadcast();
 	
-	SpawnDoors();
-}
-
-void ARoomManager::SpawnDoors()
-{
-	if (GameInstance == nullptr)
+	if (CurrentRoomLayout != nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("RoomManager: GameInstance is NOT UScrapItGameInstance!"));
-		return;
-	}
-	
-	const FVector RoomCenter = GetActorLocation();
-	const FVector RightDirection = GetActorRightVector();
-	
-	if (const TSubclassOf<AActor> DoorBP = GameInstance->DoorBP)
-	{
-		//Spawn the three doors at the correct positions (with offset)
-		for (int32 i = 0; i < 3; i++)
-		{
-			const FVector SpawnLoc = RoomCenter + (RightDirection * (i * DoorOffset));
-			if (ADoor* Door = Cast<ADoor>(GetWorld()->SpawnActor<AActor>(DoorBP, SpawnLoc, FRotator::ZeroRotator)))
-			{
-				Door->SetRoomType(GameInstance->RoomPool->GetRandomRoomType());
-			}
-		}
+		CurrentRoomLayout->SpawnDoor();
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("RoomManager: No Door BP Assigned!"));
+		UE_LOG(LogTemp, Warning, TEXT("RoomManager: Room Layout is NULL! Door not spawned."));
 	}
 }

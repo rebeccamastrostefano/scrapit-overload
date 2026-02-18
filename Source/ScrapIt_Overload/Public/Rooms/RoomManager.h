@@ -94,8 +94,6 @@ protected:
 	
 	UFUNCTION()
 	void CompleteRoom();
-	
-	void SpawnDoors();
 
 public:
 	FOnRoomCompleted OnRoomCompleted;
