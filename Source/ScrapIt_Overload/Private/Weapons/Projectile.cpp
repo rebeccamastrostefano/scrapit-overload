@@ -2,6 +2,8 @@
 
 
 #include "Weapons/Projectile.h"
+
+#include "Enemies/EnemyBase.h"
 #include "Interfaces/Damageable.h"
 
 // Sets default values
@@ -42,20 +44,13 @@ void AProjectile::InitializeProjectile(float WeaponDamage, float Speed)
 
 void AProjectile::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor && OtherActor != GetOwner())
+	if (OtherActor && OtherActor->GetClass()->IsChildOf(AEnemyBase::StaticClass()))
 	{
-			if (IDamageable* Target = Cast<IDamageable>(OtherActor))
-			{
-				Target->TakeDamage(Damage);
-			}
+		if (IDamageable* Target = Cast<IDamageable>(OtherActor))
+		{
+			Target->TakeDamage(Damage);
+			Destroy();
+		}
 	}
-	Destroy();
-}
-
-// Called every frame
-void AProjectile::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
 }
 
