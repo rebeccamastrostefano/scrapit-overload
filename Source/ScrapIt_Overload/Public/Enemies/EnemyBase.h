@@ -3,21 +3,28 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "HealthComponent.h"
+#include "AIController.h"
+#include "Components/SphereComponent.h"
+#include "GameFramework/FloatingPawnMovement.h"
 #include "GameFramework/Pawn.h"
 #include "Interfaces/Damageable.h"
 #include "EnemyBase.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDeathData, FVector, DeathLocation, int32, ScrapAmount);
 
-UENUM()
-enum class EState : uint8
+UENUM(BlueprintType)
+enum class EEnemyState : uint8
 {
 	Idle,
 	Chasing,
 	Attacking,
 	Cooldown,
-	Hurt
+	Hurt,
+	Dead
 };
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDeathData, FVector, DeathLocation, int32, ScrapAmount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStateChanged, EEnemyState, OldState, EEnemyState, NewState);
 
 UCLASS()
 class SCRAPIT_OVERLOAD_API AEnemyBase : public APawn, public IDamageable
@@ -29,11 +36,22 @@ public:
 	AEnemyBase();
 
 protected:
-	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
-	float BaseHealth;
+	virtual void BeginPlay() override;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USkeletalMeshComponent* Mesh;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USphereComponent* HurtboxSphere;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UFloatingPawnMovement* PawnMovement;
 	
 	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
-	float Damage = 5.0f;
+	class UBehaviorTree* BehaviorTree;
+	
+	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
+	float BaseHealth;
 	
 	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
 	float MoveSpeed = 500.0f;
@@ -41,20 +59,60 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
 	int32 BaseDropAmount;
 	
-	UPROPERTY(VisibleAnywhere)
-	float CurrentHealth;
+	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
+	float AttackDirectionThreshold = 0.8f;
+	
+	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
+	float Damage = 5.0f;
+	
+	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
+	float DamageTraceRadius = 50.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
+	float DamageTraceDistance = 100.f;
 	
 	UPROPERTY(VisibleAnywhere)
-	EState CurrentState = EState::Idle;
+	UHealthComponent* VitalityComponent;
 	
 	UPROPERTY()
-	APawn* MechaTarget;
+	AAIController* AIController;
+	
+	UPROPERTY()
+	APawn* Player;
+	
+	UPROPERTY(VisibleAnywhere)
+	EEnemyState CurrentState = EEnemyState::Idle;
+	
+public:
+	//Functions
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	bool IsFacingPlayer() const;
+	
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	virtual void Attack() PURE_VIRTUAL(AEnemyBase::Attack,);
+	
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	virtual void TriggerDamageTrace();
+	
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	AAIController* GetAIController() const
+	{
+		return AIController;
+	}
+	
+	UFUNCTION(BlueprintCallable)
+	void SetState(const EEnemyState NewState);
 	
 	UFUNCTION()
 	virtual void Die() override;
 	
-	virtual void TakeDamage(const float DamageAmount) override PURE_VIRTUAL(AEnemyBase::TakeDamage,);
-
-public:	
+	UFUNCTION()
+	virtual void TakeDamage(const float DamageAmount) override;
+	
+	//Events
+	UPROPERTY(BlueprintAssignable)
+	FOnStateChanged OnStateChanged;
+	
+	UPROPERTY(BlueprintAssignable)
 	FOnDeathData OnDeath;
 };

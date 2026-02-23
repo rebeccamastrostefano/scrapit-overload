@@ -24,12 +24,15 @@ void AWeaponNailGun::Fire()
 		FActorSpawnParameters SpawnParameters;
 		SpawnParameters.Owner = this;
 		SpawnParameters.Instigator = GetInstigator();
+		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		
-		AProjectile* NewProjectile = GetWorld()->SpawnActor<AProjectile>(ProjectileBP, FirePoint->GetComponentTransform(), SpawnParameters);
-		
-		if (NewProjectile)
+		if (AProjectile* NewProjectile = GetWorld()->SpawnActor<AProjectile>(ProjectileBP, FirePoint->GetComponentTransform(), SpawnParameters))
 		{
 			NewProjectile->InitializeProjectile(BaseDamage, ProjectileSpeed);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to spawn projectile!"));
 		}
 	}
 }
