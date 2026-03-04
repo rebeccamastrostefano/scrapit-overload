@@ -1,26 +1,26 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Rooms/RoomPool.h"
+#include "Rooms/LevelPool.h"
 
-ERoomType URoomPool::GetRandomRoomType()
+ELevelType ULevelPool::GetRandomLevelType()
 {
-	if (Rooms.Num() <= 0)
+	if (Levels.Num() <= 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No rooms in pool"));
-		return ERoomType::Standard;
+		return ELevelType::Standard;
 	}
 
 	float TotalWeight = 0.f;
-	for (auto& [Room, RoomWeight] : Rooms)
+	for (auto& [Room, RoomWeight] : Levels)
 	{
 		TotalWeight += RoomWeight;
 	}
-	
+
 	const float RandomValue = FMath::RandRange(0.f, TotalWeight);
 	float WeightSum = 0.f;
-	
-	for (auto& [Room, RoomWeight] : Rooms)
+
+	for (auto& [Room, RoomWeight] : Levels)
 	{
 		WeightSum += RoomWeight;
 		if (RandomValue <= WeightSum)
@@ -28,6 +28,6 @@ ERoomType URoomPool::GetRandomRoomType()
 			return Room;
 		}
 	}
-	
-	return ERoomType::Standard;
+
+	return ELevelType::Standard;
 }

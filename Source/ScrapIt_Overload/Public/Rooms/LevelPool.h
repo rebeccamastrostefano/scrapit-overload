@@ -4,10 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "RoomPool.generated.h"
+#include "LevelPool.generated.h"
 
 UENUM(BlueprintType)
-enum class ERoomType : uint8
+enum class ELevelType : uint8
 {
 	Standard,
 	Shop,
@@ -18,24 +18,25 @@ enum class ERoomType : uint8
 };
 
 USTRUCT()
-struct FRoomWeight
+struct FLevelWeight
 {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(EditAnywhere)
-	ERoomType Room;
-	
+	ELevelType Level;
+
 	UPROPERTY(EditAnywhere)
 	float Weight;
 };
+
 UCLASS()
-class SCRAPIT_OVERLOAD_API URoomPool : public UDataAsset
+class SCRAPIT_OVERLOAD_API ULevelPool : public UDataAsset
 {
 	GENERATED_BODY()
-	
+
 public:
 	UPROPERTY(EditAnywhere)
-	TArray<FRoomWeight> Rooms;
-	
-	ERoomType GetRandomRoomType();
+	TArray<FLevelWeight> Levels;
+
+	ELevelType GetRandomLevelType();
 };

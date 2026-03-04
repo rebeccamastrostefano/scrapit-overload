@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Rooms/RoomManager.h"
-#include "Rooms/Door.h"
 #include "Core/PersistentManager.h"
 #include "Core/ScrapItGameInstance.h"
 #include "Scraps/ScrapFactory.h"
@@ -9,9 +8,9 @@
 // Sets default values
 ARoomManager::ARoomManager()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	
+
 	EnemySpawner = CreateDefaultSubobject<UEnemySpawnerComponent>(TEXT("Enemy Spawner"));
 }
 
@@ -19,36 +18,74 @@ ARoomManager::ARoomManager()
 void ARoomManager::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	const UPersistentManager* PersistentManager = GetGameInstance()->GetSubsystem<UPersistentManager>();
+
+	PersistentManager = GetGameInstance()->GetSubsystem<UPersistentManager>();
 	if (PersistentManager == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("RoomManager: PersistentManager is NULL!"));
+		return;
 	}
-	
+
 	GameInstance = GetGameInstance<UScrapItGameInstance>();
 	if (GameInstance == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("RoomManager: GameInstance is NOT UScrapItGameInstance!"));
 		return;
 	}
-	
-	//Register to Enemy Spawner Events
-	EnemySpawner->OnEnemyEliminated.AddDynamic(this, &ARoomManager::HandleEnemyLoot);
-	EnemySpawner->OnEnemiesCleared.AddDynamic(this, &ARoomManager::CompleteRoom);
-	
-	CurrentRoomRank = PersistentManager->GetRoomRank();
-	UEnemyPool* Pool = GameInstance->GetEnemyPool(CurrentRoomRank);
-	
-	if (RoomType == ERoomType::Standard)
+
+	LevelsManager = GetGameInstance()->GetSubsystem<ULevelsManager>();
+	if (LevelsManager == nullptr)
 	{
-		//Scale up the enemy count based on room rank
-		BaseEnemyCount *= CurrentRoomRank;
-		
-		//Spawn the room layout and apply modifiers
-		SpawnRoomLayout();
+		UE_LOG(LogTemp, Error, TEXT("RoomManager: LevelsManager is NULL!"));
+		return;
+	}
+
+	InitializeRoom();
+}
+
+void ARoomManager::InitializeRoom()
+{
+	RoomID = LevelsManager->GetCurrentRoomID();
+	if (LevelsManager->GetLevelMap().Contains(RoomID))
+	{
+		FRoomNode& RoomNode = LevelsManager->GetLevelMap()[RoomID];
+
+		//Spawn doors according to connections
+		SpawnDoors(RoomNode);
+
+		if (RoomNode.bIsVisited)
+		{
+			GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ARoomManager::CompleteRoom);
+		}
+	}
+
+	//Init Room Layout (assigned in level)
+	if (CurrentRoomLayout == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("RoomManager: Room Layout is NULL!"));
+		return;
+	}
+
+	CurrentRoomLayout->GenerateObstacles(ObstaclePool);
+	EnemySpawner->SetRoomLayout(CurrentRoomLayout);
+
+
+	//if the room is a combat room, handle enemies
+	if (RoomType == ERoomType::Combat)
+	{
+		//Register to Enemy Spawner Events
+		EnemySpawner->OnEnemyEliminated.AddDynamic(this, &ARoomManager::HandleEnemyLoot);
+		EnemySpawner->OnEnemiesCleared.AddDynamic(this, &ARoomManager::CompleteRoom);
+
+		CurrentLevelRank = PersistentManager->GetRoomRank();
+		UEnemyPool* Pool = GameInstance->GetEnemyPool(CurrentLevelRank);
+
+		//Scale up the enemy count based on level rank
+		BaseEnemyCount *= CurrentLevelRank;
+
+		//Apply modifiers
 		ApplyRoomModifiers();
-		
+
 		//Spawn enemies in the room
 		if (Pool != nullptr)
 		{
@@ -57,29 +94,43 @@ void ARoomManager::BeginPlay()
 	}
 }
 
-void ARoomManager::SpawnRoomLayout()
+void ARoomManager::SpawnDoors(FRoomNode& RoomNode) const
 {
-	if (RoomLayouts.Num() <= 0)
+	for (const int32 NeighborID : RoomNode.ConnectedRoomsIDs)
 	{
-		UE_LOG(LogTemp, Error, TEXT("RoomManager: No Room Layouts Found!"));
-		return;
-	}
-	
-	const int32 RandomIndex = FMath::RandRange(0, RoomLayouts.Num() - 1);
-	CurrentRoomLayout = GetWorld()->SpawnActor<ARoomLayout>(RoomLayouts[RandomIndex], GetActorLocation(), FRotator::ZeroRotator);
-	
-	if (CurrentRoomLayout != nullptr)
-	{
-		//Spawn obstacles in room
-		CurrentRoomLayout->GenerateObstacles(ObstaclePool);
-		EnemySpawner->SetRoomLayout(CurrentRoomLayout);
+		const FIntPoint NeighborPosition = LevelsManager->GetLevelMap()[NeighborID].Coordinates;
+		const FIntPoint Difference = NeighborPosition - RoomNode.Coordinates;
+
+		FName TargetSocket = NAME_None;
+		if (Difference == FIntPoint(0, 1))
+		{
+			TargetSocket = "Door_N";
+		}
+		else if (Difference == FIntPoint(0, -1))
+		{
+			TargetSocket = "Door_S";
+		}
+		else if (Difference == FIntPoint(1, 0))
+		{
+			TargetSocket = "Door_E";
+		}
+		else if (Difference == FIntPoint(-1, 0))
+		{
+			TargetSocket = "Door_W";
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("RoomManager: Invalid door connection!"))
+		}
+
+		CurrentRoomLayout->SpawnDoorAtSocket(TargetSocket, NeighborID);
 	}
 }
 
 void ARoomManager::ApplyRoomModifiers()
 {
-	//The higher the room rank, the higher the chance to get a modifier (impossible on first two ranks)
-	if (FMath::RandRange(40, 180) < (20 * CurrentRoomRank))
+	//The higher the level rank, the higher the chance to get a modifier (impossible on first two ranks)
+	if (FMath::RandRange(40, 180) < (20 * CurrentLevelRank))
 	{
 		const ERoomModifiers Modifier = static_cast<ERoomModifiers>(FMath::RandRange(0, COUNT - 1));
 		switch (Modifier)
@@ -105,7 +156,7 @@ void ARoomManager::HandleEnemyLoot(FVector Location, int32 BaseDropAmount)
 		UE_LOG(LogTemp, Error, TEXT("RoomManager: Scrap Loot Table is NULL!"));
 		return;
 	}
-	
+
 	//Spawn Scraps at the location of the enemy death
 	UScrapFactory::SpawnScraps(this, Location, LootTable, BaseDropAmount);
 }
@@ -114,14 +165,18 @@ void ARoomManager::HandleEnemyLoot(FVector Location, int32 BaseDropAmount)
 void ARoomManager::CompleteRoom()
 {
 	RoomState = ERoomState::Completed;
+	if (LevelsManager != nullptr && LevelsManager->GetLevelMap().Contains(RoomID))
+	{
+		LevelsManager->MarkRoomAsVisited(RoomID);
+
+		//Spawn Doors for neighbor doors
+		TArray<int32> Connections = LevelsManager->GetLevelMap()[RoomID].ConnectedRoomsIDs;
+		for (const int32 Connection : Connections)
+		{
+			FName SocketTag = FName(*FString::Printf(TEXT("Door_%d"), Connection));
+			CurrentRoomLayout->SpawnDoorAtSocket(SocketTag, Connection);
+		}
+	}
+
 	OnRoomCompleted.Broadcast();
-	
-	if (CurrentRoomLayout != nullptr)
-	{
-		CurrentRoomLayout->SpawnDoor();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("RoomManager: Room Layout is NULL! Door not spawned."));
-	}
 }

@@ -25,41 +25,43 @@ void UWeaponSystemComponent::NotifyWeaponAcquired(const EScrapType WeaponScrapTy
 	OnWeaponAcquired.Broadcast(WeaponScrapType, WeaponLevel);
 }
 
-void UWeaponSystemComponent::EquipWeaponTypeToSocket(const EScrapType WeaponScrapType, const EWeaponSocket Socket, const int32 WeaponLevel)
+void UWeaponSystemComponent::EquipWeaponTypeToSocket(const EScrapType WeaponScrapType, const EWeaponSocket Socket,
+                                                     const int32 WeaponLevel)
 {
 	USceneComponent* AttachSocket = Sockets.FindRef(Socket);
 	if (AttachSocket == nullptr)
 	{
 		return;
 	}
-	
+
 	UScrapItGameInstance* GameInstance = GetWorld()->GetGameInstance<UScrapItGameInstance>();
 	if (GameInstance == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Error: No Game Instance"));
 		return;
 	}
-	
+
 	//If we are equipping a weapon on an occupied socket, drop the old one
 	if (SocketsToWeapons.Contains(Socket))
 	{
 		DropWeaponOnSocket(Socket);
 	}
-	
+
 	//Spawn new weapon and attach to socket
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.Owner = GetOwner();
 	const TSubclassOf<AWeaponBase> WeaponBP = GameInstance->ScrapTypeToWeaponBP[WeaponScrapType];
-	
-	if (AWeaponBase* NewWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponBP, AttachSocket->GetComponentTransform(), SpawnInfo))
+
+	if (AWeaponBase* NewWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponBP, AttachSocket->GetComponentTransform(),
+	                                                                 SpawnInfo))
 	{
 		NewWeapon->AttachToComponent(AttachSocket, FAttachmentTransformRules::KeepWorldTransform);
 		NewWeapon->TryUpgrade(WeaponLevel); //Set the level of the weapon
-		
+
 		const FWeaponData WeaponData = {WeaponScrapType, WeaponLevel, Socket};
 		WeaponLoadout.Add(WeaponData);
 		SocketsToWeapons.Add(Socket, NewWeapon);
-		
+
 		OnWeaponEquipped.Broadcast(WeaponData);
 	}
 }
@@ -72,40 +74,43 @@ void UWeaponSystemComponent::DropWeaponOnSocket(const EWeaponSocket Socket)
 		UE_LOG(LogTemp, Error, TEXT("Error: No Game Instance"));
 		return;
 	}
-	
+
 	if (AWeaponBase* WeaponActor = SocketsToWeapons.FindRef(Socket))
 	{
 		//Destroy the old weapon actor
 		WeaponActor->Destroy();
 		SocketsToWeapons.Remove(Socket);
 	}
-	
+
 	//Find the weapon data index in the Loadout
 	const int32 Index = WeaponLoadout.IndexOfByPredicate([Socket](const FWeaponData& Data)
 	{
 		return Data.Socket == Socket;
 	});
-	
+
 	if (Index != INDEX_NONE)
 	{
 		//Get the old weapon class to drop as scrap
 		const FWeaponData OldWeaponData = WeaponLoadout[Index];
-		
+
 		if (GameInstance->ScrapTypeToBP.Contains(OldWeaponData.ScrapWeaponType))
 		{
 			//Drop the old weapon on ground as scrap
-			const TSubclassOf<AScrapBase> OldWeaponScrapClass = GameInstance->ScrapTypeToBP[OldWeaponData.ScrapWeaponType];
-			if (AScrapWeapon* WeaponScrap = GetWorld()->SpawnActor<AScrapWeapon>(OldWeaponScrapClass, GetOwner()->GetActorTransform()))
+			const TSubclassOf<AScrapBase> OldWeaponScrapClass = GameInstance->ScrapTypeToBP[OldWeaponData.
+				ScrapWeaponType];
+			if (AScrapWeapon* WeaponScrap = GetWorld()->SpawnActor<AScrapWeapon>(
+				OldWeaponScrapClass, GetOwner()->GetActorTransform()))
 			{
 				WeaponScrap->InitWeaponData(OldWeaponData.ScrapWeaponType, OldWeaponData.CurrentLevel);
 			}
 		}
-		
+
 		//Remove the old weapon from the loadout
 		WeaponLoadout.RemoveAtSwap(Index);
 	}
-	
+
 	//Remove the swapped weapon from loadout
+	// Blanket capture unnecessary
 	WeaponLoadout.RemoveAll([&](const FWeaponData& Data) { return Data.Socket == Socket; });
 }
 
@@ -127,12 +132,11 @@ void UWeaponSystemComponent::UpgradeAllWeapons(FMassTier Tier)
 
 TArray<EWeaponSocket> UWeaponSystemComponent::GetAvailableSockets() const
 {
-	TArray AvailableSockets = { EWeaponSocket::Front, EWeaponSocket::Back, EWeaponSocket::Left, EWeaponSocket::Right };
-	
+	TArray AvailableSockets = {EWeaponSocket::Front, EWeaponSocket::Back, EWeaponSocket::Left, EWeaponSocket::Right};
+
 	AvailableSockets.RemoveAll([&](const EWeaponSocket Socket)
 	{
 		return SocketsToWeapons.Contains(Socket);
 	});
 	return AvailableSockets;
 }
-

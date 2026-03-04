@@ -17,9 +17,9 @@ void UTierSystemComponent::LoadTierState(int32 SavedTierNumber)
 void UTierSystemComponent::InitializeTierSystem()
 {
 	//Populate Mass Mesh Parts array
-	TArray<UStaticMeshComponent*> Meshes; 
+	TArray<UStaticMeshComponent*> Meshes;
 	GetOwner()->GetComponents<UStaticMeshComponent>(Meshes);
-	
+
 	for (UStaticMeshComponent* Mesh : Meshes)
 	{
 		if (Mesh->ComponentHasTag("MassTier"))
@@ -28,7 +28,7 @@ void UTierSystemComponent::InitializeTierSystem()
 			{
 				return Tag.ToString().IsNumeric();
 			});
-			
+
 			if (NumericTag != nullptr)
 			{
 				int32 TierNumber = FCString::Atoi(*NumericTag->ToString());
@@ -36,7 +36,7 @@ void UTierSystemComponent::InitializeTierSystem()
 			}
 		}
 	}
-	
+
 	CurrentTier = MassTiers[0];
 	OnTierChanged.Broadcast(CurrentTier);
 }
@@ -44,16 +44,20 @@ void UTierSystemComponent::InitializeTierSystem()
 void UTierSystemComponent::CheckForTierChange(const int32 CurrentScraps)
 {
 	//Determine if we are upgrading, downgrading or staying same tier
-	const int32 TierDirection = (CurrentScraps > CurrentTier.UpgradeThreshold) ? 1 : (CurrentScraps < CurrentTier.DowngradeThreshold) ? -1 : 0;
-	
+	const int32 TierDirection = (CurrentScraps > CurrentTier.UpgradeThreshold)
+		                            ? 1
+		                            : (CurrentScraps < CurrentTier.DowngradeThreshold)
+		                            ? -1
+		                            : 0;
+
 	if (TierDirection == 0)
 	{
 		return; //No change
 	}
-	
+
 	//Find the target Tier (previous or next)
 	const int32 TargetTierNumber = CurrentTier.TierNumber + TierDirection;
-	const FMassTier* NewTier= MassTiers.FindByPredicate([TargetTierNumber](const FMassTier& Tier)
+	const FMassTier* NewTier = MassTiers.FindByPredicate([TargetTierNumber](const FMassTier& Tier)
 	{
 		return Tier.TierNumber == TargetTierNumber;
 	});
@@ -69,9 +73,9 @@ void UTierSystemComponent::ApplyNewTier(const FMassTier& Tier)
 	//We are upgrading or downgrading Tier
 	CurrentTier = Tier;
 	UpdateTierVisuals(CurrentTier);
-	
+
 	//Update UI
-	OnTierChanged.Broadcast(CurrentTier);
+	OnTierChanged.Broadcast(CurrentTier); // Did it really change?
 	UE_LOG(LogTemp, Warning, TEXT("Tier Changed to: %d"), Tier.TierNumber);
 }
 
@@ -95,6 +99,6 @@ FMassTier UTierSystemComponent::GetTierByNumber(const int32 TierNumber) const
 	{
 		return Tier.TierNumber == TierNumber;
 	});
-		
+
 	return FoundTier ? *FoundTier : MassTiers[0];
 }

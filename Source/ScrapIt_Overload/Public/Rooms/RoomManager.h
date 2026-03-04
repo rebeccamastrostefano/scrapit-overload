@@ -6,7 +6,9 @@
 #include "EnemySpawnerComponent.h"
 #include "RoomLayout.h"
 #include "GameFramework/Actor.h"
-#include "RoomPool.h"
+#include "LevelPool.h"
+#include "LevelsManager.h"
+#include "Core/PersistentManager.h"
 #include "Core/ScrapItGameInstance.h"
 #include "Scraps/ScrapLootTable.h"
 #include "RoomManager.generated.h"
@@ -61,7 +63,7 @@ protected:
 	UScrapLootTable* LootTable;
 
 	UPROPERTY(EditAnywhere, Category = "Room Generation")
-	TArray<TSubclassOf<ARoomLayout>> RoomLayouts;
+	ARoomLayout* CurrentRoomLayout;
 
 	UPROPERTY(EditAnywhere, Category = "Room Generation")
 	TArray<TSubclassOf<AActor>> ObstaclePool;
@@ -71,19 +73,26 @@ protected:
 
 	//Room State
 	UPROPERTY()
-	ARoomLayout* CurrentRoomLayout;
+	int32 RoomID;
 
 	UPROPERTY(VisibleAnywhere, Category = "Room State")
 	ERoomState RoomState = ERoomState::Active;
 
 	UPROPERTY(VisibleAnywhere, Category = "Room State")
-	int32 CurrentRoomRank = 1;
+	int32 CurrentLevelRank = 1;
+
+	UPROPERTY()
+	UPersistentManager* PersistentManager;
 
 	UPROPERTY()
 	UScrapItGameInstance* GameInstance;
 
+	UPROPERTY()
+	ULevelsManager* LevelsManager;
+
 	//Functions
-	void SpawnRoomLayout();
+	void InitializeRoom();
+	void SpawnDoors(FRoomNode& RoomNode) const;
 	void ApplyRoomModifiers();
 
 	UFUNCTION()

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "RoomPool.h"
+#include "LevelPool.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/Actor.h"
 #include "Door.generated.h"
@@ -12,25 +12,27 @@ UCLASS()
 class SCRAPIT_OVERLOAD_API ADoor : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	ADoor();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	
+
 	UPROPERTY(VisibleAnywhere)
 	USphereComponent* CollisionSphere;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Door Settings")
-	ERoomType NextRoomType;
-	
+	int32 TargetRoomID;
+
 	UFUNCTION()
-	void OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	void OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                   int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-public:	
-	void SetRoomType(ERoomType NewRoomType);
-
+public:
+	void SetRoomID(const int32 RoomID);
+	void Open();
+	void Close();
 };
