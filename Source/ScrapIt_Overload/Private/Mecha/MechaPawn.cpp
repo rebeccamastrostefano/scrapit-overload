@@ -193,6 +193,10 @@ void AMechaPawn::LoadMechaState(const FMechaRunState& MechaRunState)
 	{
 		CurrentScraps = MechaRunState.CurrentScraps;
 	}
+	else
+	{
+		CurrentScraps = 0;
+	}
 	OnScrapCountChanged.Broadcast(CurrentScraps);
 	
 	//Load Weapons
@@ -227,7 +231,7 @@ void AMechaPawn::ApplySteer(const FInputActionValue& Value)
 
 void AMechaPawn::UpdateThrust(const float Value) const
 {
-	if (Value == 0.0f)
+	if (FMath::IsNearlyZero(Value))
 	{
 		return;
 	}
@@ -311,12 +315,6 @@ void AMechaPawn::AddScrap(const int32 Amount)
 	OnScrapCountChanged.Broadcast(CurrentScraps);
 }
 
-void AMechaPawn::RemoveScrap(const int32 Amount)
-{
-	CurrentScraps -= Amount;
-	OnScrapCountChanged.Broadcast(CurrentScraps);
-}
-
 void AMechaPawn::UpdateTierModifiers(FMassTier Tier)
 {
 	float const NewAccelerationMult = Tier.SpeedPenalty;
@@ -331,29 +329,40 @@ void AMechaPawn::UpdateTierModifiers(FMassTier Tier)
 void AMechaPawn::TakeDamage(const float Amount)
 {
 	UE_LOG(LogTemp, Warning, TEXT("MechaPawn Taking Damage: %f"), Amount);
-	if (CurrentScraps > 0)
-	{
-		float const TotalScrapShieldAbsorption = CurrentScraps * ScrapShieldAbsorption;
-		if (TotalScrapShieldAbsorption >= Amount)
-		{
-			//Scraps absorb all damage, no core health damage
-			int32 const ScrapLost = FMath::CeilToInt(Amount / ScrapShieldAbsorption);
-			RemoveScrap(ScrapLost);
-			return;
-		}
 	
-		//Scraps are lost and Mecha takes remaining damage
-		float const RemainingDamage = Amount - TotalScrapShieldAbsorption;
-		RemoveScrap(CurrentScraps);
-		CurrentHealth -= RemainingDamage;
-		OnHealthChanged.Broadcast(CurrentHealth);
+	float const RemainingDamage = AbsorbDamageOnShield(Amount);
+	if (RemainingDamage > 0)
+	{
+		DamageHealth(RemainingDamage);
 	}
-	else
+}
+
+float AMechaPawn::AbsorbDamageOnShield(const float DamageAmount)
+{
+	if (CurrentScraps <= 0)
 	{
 		//No Scraps to absorb damage, straight to core
-		CurrentHealth -= Amount;
-		OnHealthChanged.Broadcast(CurrentHealth);
+		return DamageAmount;
 	}
+	
+	float const TotalScrapShieldAbsorption = CurrentScraps * ScrapShieldAbsorption;
+	if (TotalScrapShieldAbsorption >= DamageAmount)
+	{
+		//Scraps absorb all damage, no core health damage
+		int32 const ScrapLost = FMath::CeilToInt(DamageAmount / ScrapShieldAbsorption);
+		AddScrap(-ScrapLost);
+		return 0.f;
+	}
+	
+	//Scraps are lost and Mecha takes remaining damage
+	AddScrap(-CurrentScraps);
+	return DamageAmount - TotalScrapShieldAbsorption;
+}
+
+void AMechaPawn::DamageHealth(const float DamageAmount)
+{
+	CurrentHealth -= DamageAmount;
+	OnHealthChanged.Broadcast(CurrentHealth);
 	
 	if (CurrentHealth <= 0)
 	{
@@ -371,10 +380,6 @@ void AMechaPawn::Die()
 void AMechaPawn::AnimateWheels(const float DeltaTime)
 {
 	FVector const Velocity = MechaMesh->GetPhysicsLinearVelocity();
-	if (Velocity == FVector::ZeroVector)
-	{
-		return;
-	}
 	
 	float const ForwardSpeed = FVector::DotProduct(Velocity, MechaMesh->GetForwardVector());
 	

@@ -184,6 +184,10 @@ protected:
 	void ToggleMagnet();
 	void UpdateMagnetDrag(float DeltaTime) const;
 	
+	/* --- Damage Functions --- */
+	float AbsorbDamageOnShield(const float DamageAmount);
+	void DamageHealth(const float DamageAmount);
+	
 	/* --- Tier Functions --- */
 	UFUNCTION()
 	void UpdateTierModifiers(FMassTier Tier);
@@ -212,7 +216,6 @@ public:
 	
 	/* --- Setters --- */
 	void AddScrap(const int32 Amount);
-	void RemoveScrap(const int32 Amount);
 	
 	/* --- Getters --- */
 	UFUNCTION(BlueprintPure, Category = "Mecha State")
