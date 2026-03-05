@@ -62,11 +62,7 @@ void ARoomLayout::SpawnDoorAtSocket(const FName SocketTag, const int32 RoomID)
 		const USceneComponent* SpawnPoint = Cast<USceneComponent>(DoorSpawnPoints[0]);
 		const UScrapItGameInstance* GameInstance = Cast<UScrapItGameInstance>(GetGameInstance());
 
-		if (GameInstance == nullptr)
-		{
-			UE_LOG(LogTemp, Error, TEXT("RoomLayout: GameInstance is NOT UScrapItGameInstance!"));
-			return;
-		}
+		check(GameInstance != nullptr);
 
 		if (const TSubclassOf<AActor> DoorBP = GameInstance->DoorBP)
 		{

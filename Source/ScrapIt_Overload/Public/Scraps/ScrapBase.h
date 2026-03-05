@@ -27,59 +27,60 @@ UCLASS()
 class SCRAPIT_OVERLOAD_API AScrapBase : public AActor, public IScrappable
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	AScrapBase();
 
 protected:
 	EScrapState CurrentState = EScrapState::Idle;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UStaticMeshComponent* ScrapMesh;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
 	EScrapType ScrapType = EScrapType::Generic;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
 	float BasePullSpeed = 100.0f;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
 	float HoverHeight = 150.0f;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Scrap Settings")
 	float MaxBoostSpeed = 5.0f;
-	
+
 	// Magnet Variables
 	UPROPERTY()
 	AActor* PullingActor;
-	
+
 	float MagnetStrength = 1.0f;
 	float MagnetRadius = 1.0f;
 	float CollectionDistance = 1.0f;
-	
+
 	//How long to wait since last pull from magnet before dropping the scrap
 	float MagnetTimeout = 0.5f;
-	float LastPullTime = 0.0f;
+	float MagnetTimeRemaining = 0.f;
 	FVector TargetHoverLocation = FVector::ZeroVector;
 
 	//Scrappable Interface
-	virtual void OnMagnetPulled(AActor* MechaActor, float PullStrength, float PullRadius, float CollectionRadius) override;
+	virtual void OnMagnetPulled(AActor* MechaActor, float PullStrength, float PullRadius,
+	                            float CollectionRadius) override;
 	virtual void OnMagnetReleased() override;
-	virtual void OnCollected() PURE_VIRTUAL(AScrapBase::OnCollected, );
-	
+	virtual void OnCollected() PURE_VIRTUAL(AScrapBase::OnCollected,);
+
 	void RiseUp(const FVector& CurrentLocation, const float DeltaTime);
 	void ApplyPullForce(const FVector& CurrentLocation, const float DeltaTime);
-	
-public:	
+
+public:
 	virtual void Tick(float DeltaTime) override;
-	
+
 	//SETTERS
 	void SetScrapType(EScrapType const Type)
 	{
 		ScrapType = Type;
 	}
-	
+
 	//GETTERS
 	EScrapType GetScrapType() const
 	{

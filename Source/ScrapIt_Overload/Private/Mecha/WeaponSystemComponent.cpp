@@ -35,11 +35,7 @@ void UWeaponSystemComponent::EquipWeaponTypeToSocket(const EScrapType WeaponScra
 	}
 
 	UScrapItGameInstance* GameInstance = GetWorld()->GetGameInstance<UScrapItGameInstance>();
-	if (GameInstance == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Error: No Game Instance"));
-		return;
-	}
+	check(GameInstance != nullptr);
 
 	//If we are equipping a weapon on an occupied socket, drop the old one
 	if (SocketsToWeapons.Contains(Socket))
@@ -69,11 +65,7 @@ void UWeaponSystemComponent::EquipWeaponTypeToSocket(const EScrapType WeaponScra
 void UWeaponSystemComponent::DropWeaponOnSocket(const EWeaponSocket Socket)
 {
 	UScrapItGameInstance* GameInstance = GetWorld()->GetGameInstance<UScrapItGameInstance>();
-	if (GameInstance == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Error: No Game Instance"));
-		return;
-	}
+	check(GameInstance != nullptr);
 
 	if (AWeaponBase* WeaponActor = SocketsToWeapons.FindRef(Socket))
 	{
@@ -110,8 +102,7 @@ void UWeaponSystemComponent::DropWeaponOnSocket(const EWeaponSocket Socket)
 	}
 
 	//Remove the swapped weapon from loadout
-	// Blanket capture unnecessary
-	WeaponLoadout.RemoveAll([&](const FWeaponData& Data) { return Data.Socket == Socket; });
+	WeaponLoadout.RemoveAll([Socket](const FWeaponData& Data) { return Data.Socket == Socket; });
 }
 
 void UWeaponSystemComponent::UpgradeAllWeapons(FMassTier Tier)

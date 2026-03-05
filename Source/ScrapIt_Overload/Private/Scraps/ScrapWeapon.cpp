@@ -8,14 +8,10 @@ void AScrapWeapon::InitWeaponData(const EScrapType WeaponScrapType, const int32 
 {
 	WeaponLevel = LevelNumber;
 	ScrapType = WeaponScrapType;
-	
+
 	const UScrapItGameInstance* GameInstance = Cast<UScrapItGameInstance>(GetGameInstance());
-	if (GameInstance == nullptr)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ScrapWeapon: GameInstance is NOT UScrapItGameInstance!"));
-		return;
-	}
-	
+	check(GameInstance != nullptr);
+
 	if (const UWeaponLevels* LevelsPool = GameInstance->WeaponLevels.FindRef(ScrapType))
 	{
 		if (const FWeaponLevelDefinition* WeaponData = LevelsPool->Levels.Find(LevelNumber))
@@ -24,12 +20,14 @@ void AScrapWeapon::InitWeaponData(const EScrapType WeaponScrapType, const int32 
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("ScrapWeapon: No WeaponLevel data for %s level %d!"), *UEnum::GetValueAsString(WeaponScrapType), LevelNumber);
+			UE_LOG(LogTemp, Warning, TEXT("ScrapWeapon: No WeaponLevel data for %s level %d!"),
+			       *UEnum::GetValueAsString(WeaponScrapType), LevelNumber);
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ScrapWeapon: No WeaponLevels data for %s!"), *UEnum::GetValueAsString(WeaponScrapType));
+		UE_LOG(LogTemp, Warning, TEXT("ScrapWeapon: No WeaponLevels data for %s!"),
+		       *UEnum::GetValueAsString(WeaponScrapType));
 	}
 }
 

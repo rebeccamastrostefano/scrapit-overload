@@ -10,9 +10,9 @@
 // Sets default values
 AWeaponBase::AWeaponBase()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	
+
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh Component"));
 	RootComponent = MeshComponent;
 }
@@ -21,11 +21,11 @@ AWeaponBase::AWeaponBase()
 void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	Damage = BaseDamage;
 	FireRate = BaseFireRate;
 	Range = BaseRange;
-	
+
 	if (FireRate > 0)
 	{
 		GetWorldTimerManager().SetTimer(FireTimer, this, &AWeaponBase::Fire, FireRate, true);
@@ -38,37 +38,37 @@ AActor* AWeaponBase::FindNearestEnemy() const
 	FCollisionShape Scope = FCollisionShape::MakeSphere(BaseRange);
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
-	
+
 	//Get all pawns in range
 	if (!GetWorld()->OverlapMultiByChannel(Overlaps, GetActorLocation(), FQuat::Identity, ECC_Pawn, Scope, Params))
 	{
 		return nullptr;
 	}
-	
+
 	AActor* NearestEnemy = nullptr;
 	float MinDistSquared = FMath::Square(BaseRange);
 	const FVector ActorLocation = GetActorLocation();
 	const FVector Forward = GetSocketRotation().Vector();
-	
+
 	for (const FOverlapResult& Result : Overlaps)
 	{
 		AActor* const OtherActor = Result.GetActor();
-		
+
 		//Check for interface
 		if (OtherActor == nullptr || !OtherActor->GetClass()->IsChildOf(AEnemyBase::StaticClass()))
 		{
 			continue;
 		}
-		
+
 		const FVector EnemyLocation = OtherActor->GetActorLocation();
 		const FVector ToEnemy = (EnemyLocation - ActorLocation).GetSafeNormal();
-		
+
 		//Check if enemy is in fire cone
 		if (FVector::DotProduct(Forward, ToEnemy) < FireConeThreshold)
 		{
 			continue;
 		}
-		
+
 		//Check if in range
 		const float DistSquared = FVector::DistSquared(EnemyLocation, ActorLocation);
 		if (DistSquared < MinDistSquared)
@@ -92,7 +92,7 @@ void AWeaponBase::TrackEnemy(const float DeltaTime)
 	{
 		TargetRotation = GetSocketRotation();
 	}
-	
+
 	const FRotator NewRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, RotationSpeed);
 	SetActorRotation(NewRotation);
 }
@@ -121,11 +121,8 @@ bool AWeaponBase::TryUpgrade(const int32 TierNumber)
 void AWeaponBase::SetLevel(const int32 NewLevel)
 {
 	const UScrapItGameInstance* GameInstance = Cast<UScrapItGameInstance>(GetGameInstance());
-	if (GameInstance == nullptr)
-	{
-		return;
-	}
-	
+	check(GameInstance != nullptr);
+
 	UWeaponLevels* WeaponLevels = GameInstance->WeaponLevels.FindRef(ScrapType);
 	if (WeaponLevels == nullptr)
 	{
@@ -138,16 +135,16 @@ void AWeaponBase::SetLevel(const int32 NewLevel)
 		UE_LOG(LogTemp, Error, TEXT("%s: No Weapon Level Definition found for Level %d!"), *GetName(), NewLevel)
 		return;
 	}
-	
+
 	const FWeaponLevelDefinition& LevelDef = WeaponLevels->Levels[NewLevel];
-	
+
 	MeshComponent->SetStaticMesh(LevelDef.WeaponMesh);
 	Damage = BaseDamage * LevelDef.DamageMultiplier;
 	FireRate = BaseFireRate * LevelDef.FireRateMultiplier;
 	Range = BaseRange * LevelDef.RangeMultiplier;
-	
+
 	CurrentWeaponLevel = NewLevel;
-	
+
 	UpdateFireTimer();
 	ApplyUniquePowerUp();
 }
@@ -160,4 +157,3 @@ void AWeaponBase::UpdateFireTimer()
 		GetWorldTimerManager().SetTimer(FireTimer, this, &AWeaponBase::Fire, FireRate, true);
 	}
 }
-

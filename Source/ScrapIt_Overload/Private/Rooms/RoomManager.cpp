@@ -20,25 +20,13 @@ void ARoomManager::BeginPlay()
 	Super::BeginPlay();
 
 	PersistentManager = GetGameInstance()->GetSubsystem<UPersistentManager>();
-	if (PersistentManager == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("RoomManager: PersistentManager is NULL!"));
-		return;
-	}
+	check(PersistentManager != nullptr);
 
 	GameInstance = GetGameInstance<UScrapItGameInstance>();
-	if (GameInstance == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("RoomManager: GameInstance is NOT UScrapItGameInstance!"));
-		return;
-	}
+	check(GameInstance != nullptr);
 
 	LevelsManager = GetGameInstance()->GetSubsystem<ULevelsManager>();
-	if (LevelsManager == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("RoomManager: LevelsManager is NULL!"));
-		return;
-	}
+	check(LevelsManager != nullptr);
 
 	InitializeRoom();
 }

@@ -66,6 +66,10 @@ void UTierSystemComponent::CheckForTierChange(const int32 CurrentScraps)
 	{
 		ApplyNewTier(*NewTier);
 	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("No Tier to Apply for Tier Number: %d"), TargetTierNumber);
+	}
 }
 
 void UTierSystemComponent::ApplyNewTier(const FMassTier& Tier)
@@ -75,7 +79,7 @@ void UTierSystemComponent::ApplyNewTier(const FMassTier& Tier)
 	UpdateTierVisuals(CurrentTier);
 
 	//Update UI
-	OnTierChanged.Broadcast(CurrentTier); // Did it really change?
+	OnTierChanged.Broadcast(CurrentTier);
 	UE_LOG(LogTemp, Warning, TEXT("Tier Changed to: %d"), Tier.TierNumber);
 }
 

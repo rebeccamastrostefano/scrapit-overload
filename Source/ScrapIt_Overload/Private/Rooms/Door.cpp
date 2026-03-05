@@ -40,26 +40,10 @@ void ADoor::OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActo
 	}
 
 	UPersistentManager* PersistentManager = GetGameInstance()->GetSubsystem<UPersistentManager>();
-	// How likely is this to happen? Perhaps an assert would be better
-	if (PersistentManager == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("No Persistent Manager"));
-		return;
-	}
-
-	const UScrapItGameInstance* GameInstance = Cast<UScrapItGameInstance>(GetGameInstance());
-	if (GameInstance == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("No Game Instance"));
-		return;
-	}
+	check(PersistentManager != nullptr);
 
 	const ULevelsManager* LevelsManager = GetGameInstance()->GetSubsystem<ULevelsManager>();
-	if (LevelsManager == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("No Level Manager"));
-		return;
-	}
+	check(LevelsManager != nullptr);
 
 	//Save the Player's state before progressing
 	PersistentManager->SaveMechaState(

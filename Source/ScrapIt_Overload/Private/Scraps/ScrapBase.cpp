@@ -28,10 +28,8 @@ void AScrapBase::Tick(float DeltaTime)
 	}
 
 	//If magnet has stopped pulling, release scrap
-	// If the game would be paused, this approach might cause issues
-	// Instead, you can reset to MagnetTimeout and count down
-	float const TimeSinceLastPull = GetWorld()->GetTimeSeconds() - LastPullTime;
-	if (TimeSinceLastPull > MagnetTimeout)
+	MagnetTimeRemaining -= DeltaTime;
+	if (MagnetTimeRemaining <= 0.f)
 	{
 		OnMagnetReleased();
 		return;
@@ -53,14 +51,14 @@ void AScrapBase::Tick(float DeltaTime)
 void AScrapBase::OnMagnetPulled(AActor* MechaActor, float const PullStrength, float const PullRadius,
                                 float const CollectionRadius)
 {
-	LastPullTime = GetWorld()->GetTimeSeconds();
+	MagnetTimeRemaining = MagnetTimeout; //Always reset timer while magnet is pulling
 
-	//If we are not already pulling, start pull
 	if (CurrentState != EScrapState::Idle)
 	{
 		return;
 	}
 
+	//If we are not already pulling, initialize pull
 	SetActorTickEnabled(true);
 	PullingActor = MechaActor;
 	MagnetStrength = PullStrength;
