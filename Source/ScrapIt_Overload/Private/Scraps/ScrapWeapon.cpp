@@ -1,8 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+#include "Scraps/ScrapWeapon.h"
 #include "Mecha/MechaPawn.h"
 #include "Core/ScrapItGameInstance.h"
-#include "Scraps/ScrapWeapon.h"
 
 void AScrapWeapon::InitWeaponData(const EScrapType WeaponScrapType, const int32 LevelNumber)
 {

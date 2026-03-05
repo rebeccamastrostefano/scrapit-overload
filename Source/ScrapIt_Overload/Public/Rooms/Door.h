@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "LevelPool.h"
+#include "LevelsManager.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/Actor.h"
 #include "Door.generated.h"
@@ -27,12 +27,20 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Door Settings")
 	int32 TargetRoomID;
 
+	EDoorDirection DoorDirection;
+
 	UFUNCTION()
 	void OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                   int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 public:
 	void SetRoomID(const int32 RoomID);
+
+	FORCEINLINE void SetDoorDirection(const EDoorDirection Direction)
+	{
+		DoorDirection = Direction;
+	}
+
 	void Open();
 	void Close();
 };

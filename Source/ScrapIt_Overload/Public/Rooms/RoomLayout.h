@@ -35,4 +35,5 @@ public:
 
 	//Getters
 	UBoxComponent* GetRandomSpawnZone() const;
+	USceneComponent* GetDoorAtSocket(const FName SocketTag) const;
 };

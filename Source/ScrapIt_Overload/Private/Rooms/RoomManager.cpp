@@ -3,6 +3,7 @@
 #include "Rooms/RoomManager.h"
 #include "Core/PersistentManager.h"
 #include "Core/ScrapItGameInstance.h"
+#include "Kismet/GameplayStatics.h"
 #include "Scraps/ScrapFactory.h"
 
 // Sets default values
@@ -33,6 +34,16 @@ void ARoomManager::BeginPlay()
 
 void ARoomManager::InitializeRoom()
 {
+	//Spawn a random room layout
+	const TSubclassOf<ARoomLayout> RoomLayoutClass = RoomLayoutPool[FMath::RandRange(0, RoomLayoutPool.Num() - 1)];
+	CurrentRoomLayout = GetWorld()->SpawnActor<ARoomLayout>(RoomLayoutClass);
+
+	if (CurrentRoomLayout == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("RoomManager: Room Layout actor NOT FOUND in the level!"));
+		return;
+	}
+
 	RoomID = LevelsManager->GetCurrentRoomID();
 	if (LevelsManager->GetLevelMap().Contains(RoomID))
 	{
@@ -41,9 +52,14 @@ void ARoomManager::InitializeRoom()
 		//Spawn doors according to connections
 		SpawnDoors(RoomNode);
 
+		//If the room was already visited, complete it
 		if (RoomNode.bIsVisited)
 		{
-			GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ARoomManager::CompleteRoom);
+			CompleteRoom();
+		}
+		else
+		{
+			CurrentRoomLayout->SetDoorsState(false);
 		}
 	}
 
@@ -56,10 +72,10 @@ void ARoomManager::InitializeRoom()
 
 	CurrentRoomLayout->GenerateObstacles(ObstaclePool);
 	EnemySpawner->SetRoomLayout(CurrentRoomLayout);
+	TeleportPlayerToEntry();
 
-
-	//if the room is a combat room, handle enemies
-	if (RoomType == ERoomType::Combat)
+	//if the room is a combat room and has not been already visited, handle enemies
+	if (RoomType == ERoomType::Combat && RoomState != ERoomState::Completed)
 	{
 		//Register to Enemy Spawner Events
 		EnemySpawner->OnEnemyEliminated.AddDynamic(this, &ARoomManager::HandleEnemyLoot);
@@ -136,6 +152,53 @@ void ARoomManager::ApplyRoomModifiers()
 	}
 }
 
+void ARoomManager::TeleportPlayerToEntry() const
+{
+	const EDoorDirection EntryDirection = LevelsManager->GetEntryDirection();
+	if (EntryDirection == None)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("RoomManager: Entry direction is None!"))
+		return; //Likely the starting room, player should already be in position with the PlayerStart
+	}
+
+	FName DirectionTag;
+	switch (EntryDirection)
+	{
+	case North:
+		DirectionTag = "Door_N";
+		break;
+	case South:
+		DirectionTag = "Door_S";
+		break;
+	case West:
+		DirectionTag = "Door_W";
+		break;
+	case East:
+		DirectionTag = "Door_E";
+		break;
+	default:
+		DirectionTag = "Door_S";
+		break;
+	}
+
+	USceneComponent* EntryPoint = CurrentRoomLayout->GetDoorAtSocket(DirectionTag);
+	if (EntryPoint != nullptr)
+	{
+		AActor* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+
+		if (Player != nullptr && EntryPoint != nullptr)
+		{
+			const FVector SpawnLocation = EntryPoint->GetComponentLocation() + (EntryPoint->GetForwardVector() * 200.f);
+			Player->SetActorLocationAndRotation(SpawnLocation, EntryPoint->GetComponentRotation());
+		}
+		UE_LOG(LogTemp, Warning, TEXT("RoomManager: Teleported player to room entry point!"))
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("RoomManager: Entry point socket not found!"))
+	}
+}
+
 //Enemy Death
 void ARoomManager::HandleEnemyLoot(FVector Location, int32 BaseDropAmount)
 {
@@ -157,13 +220,7 @@ void ARoomManager::CompleteRoom()
 	{
 		LevelsManager->MarkRoomAsVisited(RoomID);
 
-		//Spawn Doors for neighbor doors
-		TArray<int32> Connections = LevelsManager->GetLevelMap()[RoomID].ConnectedRoomsIDs;
-		for (const int32 Connection : Connections)
-		{
-			FName SocketTag = FName(*FString::Printf(TEXT("Door_%d"), Connection));
-			CurrentRoomLayout->SpawnDoorAtSocket(SocketTag, Connection);
-		}
+		CurrentRoomLayout->SetDoorsState(true);
 	}
 
 	OnRoomCompleted.Broadcast();

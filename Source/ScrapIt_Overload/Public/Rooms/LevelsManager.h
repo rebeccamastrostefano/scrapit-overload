@@ -32,6 +32,16 @@ struct FRoomNode
 	bool bIsVisited = false;
 };
 
+UENUM(BlueprintType)
+enum EDoorDirection : uint8
+{
+	North,
+	South,
+	East,
+	West,
+	None
+};
+
 UCLASS()
 class SCRAPIT_OVERLOAD_API ULevelsManager : public UGameInstanceSubsystem
 {
@@ -50,7 +60,14 @@ protected:
 	UPROPERTY()
 	URoomsPool* RoomsPool;
 
+	EDoorDirection LastExitDirection = EDoorDirection::None;
+
+	const TArray<FIntPoint> Directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+
 	void CreateBaseLevelMap(const int32 NumRooms);
+
+	//Helper functions
+	FIntPoint GetRandomEmptyNeighbor(const FIntPoint Origin, const TArray<FIntPoint>& Occupied) const;
 
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
@@ -83,4 +100,20 @@ public:
 	{
 		return CurrentLevelType;
 	}
+
+	//SETTERS
+	UFUNCTION()
+	FORCEINLINE void SetCurrentRoomID(const int32 RoomID)
+	{
+		CurrentRoomID = RoomID;
+	}
+
+	UFUNCTION()
+	FORCEINLINE void SetLastExitDirection(const EDoorDirection Direction)
+	{
+		LastExitDirection = Direction;
+	}
+
+	//Helper Functions
+	EDoorDirection GetEntryDirection() const;
 };

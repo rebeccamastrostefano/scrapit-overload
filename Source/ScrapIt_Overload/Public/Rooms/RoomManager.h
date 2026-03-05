@@ -63,10 +63,13 @@ protected:
 	UScrapLootTable* LootTable;
 
 	UPROPERTY(EditAnywhere, Category = "Room Generation")
-	ARoomLayout* CurrentRoomLayout;
+	TArray<TSubclassOf<ARoomLayout>> RoomLayoutPool;
 
 	UPROPERTY(EditAnywhere, Category = "Room Generation")
 	TArray<TSubclassOf<AActor>> ObstaclePool;
+
+	UPROPERTY(VisibleAnywhere, Category = "Room State")
+	ARoomLayout* CurrentRoomLayout;
 
 	UPROPERTY()
 	UEnemySpawnerComponent* EnemySpawner;
@@ -94,6 +97,7 @@ protected:
 	void InitializeRoom();
 	void SpawnDoors(FRoomNode& RoomNode) const;
 	void ApplyRoomModifiers();
+	void TeleportPlayerToEntry() const;
 
 	UFUNCTION()
 	void HandleEnemyLoot(FVector Location, int32 BaseDropAmount);

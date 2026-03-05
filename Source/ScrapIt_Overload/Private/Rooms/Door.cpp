@@ -42,7 +42,7 @@ void ADoor::OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActo
 	UPersistentManager* PersistentManager = GetGameInstance()->GetSubsystem<UPersistentManager>();
 	check(PersistentManager != nullptr);
 
-	const ULevelsManager* LevelsManager = GetGameInstance()->GetSubsystem<ULevelsManager>();
+	ULevelsManager* LevelsManager = GetGameInstance()->GetSubsystem<ULevelsManager>();
 	check(LevelsManager != nullptr);
 
 	//Save the Player's state before progressing
@@ -56,16 +56,22 @@ void ADoor::OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActo
 	//Advance the room in the persistent manager
 	PersistentManager->AdvanceRoom();
 
+	//Save the direction we are leaving from
+	LevelsManager->SetLastExitDirection(DoorDirection);
+
 	//Load the next level based on the target room id
+	LevelsManager->SetCurrentRoomID(TargetRoomID);
 	LevelsManager->LoadRoomByID(TargetRoomID);
 }
 
 void ADoor::Open()
 {
-	//TODO: 
+	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	//TODO: Play animation/mesh change
 }
 
 void ADoor::Close()
 {
-	//TODO:
+	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//TODO: Play animation/mesh change
 }

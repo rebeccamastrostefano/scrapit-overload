@@ -71,6 +71,14 @@ void ARoomLayout::SpawnDoorAtSocket(const FName SocketTag, const int32 RoomID)
 			                                                FRotator::ZeroRotator))
 			{
 				Door->SetRoomID(RoomID);
+
+				EDoorDirection Direction = None;
+				if (SocketTag == "Door_N") Direction = North;
+				else if (SocketTag == "Door_S") Direction = South;
+				else if (SocketTag == "Door_E") Direction = East;
+				else if (SocketTag == "Door_W") Direction = West;
+				Door->SetDoorDirection(Direction);
+
 				Doors.Add(Door);
 			}
 		}
@@ -90,6 +98,18 @@ UBoxComponent* ARoomLayout::GetRandomSpawnZone() const
 	}
 	const int32 RandomIndex = FMath::RandRange(0, SpawnZones.Num() - 1);
 	return SpawnZones[RandomIndex];
+}
+
+USceneComponent* ARoomLayout::GetDoorAtSocket(const FName SocketTag) const
+{
+	const TArray<UActorComponent*> DoorSockets = GetComponentsByTag(USceneComponent::StaticClass(), SocketTag);
+
+	if (DoorSockets.Num() > 0)
+	{
+		return Cast<USceneComponent>(DoorSockets[0]);
+	}
+
+	return nullptr;
 }
 
 void ARoomLayout::SetDoorsState(const bool bAreDoorsOpen)
