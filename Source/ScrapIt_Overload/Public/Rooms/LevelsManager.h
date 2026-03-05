@@ -65,6 +65,8 @@ protected:
 	const TArray<FIntPoint> Directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
 
 	void CreateBaseLevelMap(const int32 NumRooms);
+	void SetupSpecialRooms(const int32 NumRooms, TArray<int32>& OutSpecialNodes);
+	void ConnectRooms(const int32 From, const int32 To, TArray<FIntPoint>& OccupiedCoordinates);
 
 	//Helper functions
 	FIntPoint GetRandomEmptyNeighbor(const FIntPoint Origin, const TArray<FIntPoint>& Occupied) const;

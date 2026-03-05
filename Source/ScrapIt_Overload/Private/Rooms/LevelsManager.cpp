@@ -24,44 +24,22 @@ void ULevelsManager::GenerateLevel(const int32 NumRooms)
 {
 	if (RoomsPool == nullptr || NumRooms <= 2)
 	{
+		//TODO: Handle special levels with few rooms
 		return;
 	}
 
-	//Reset vars for new level generation
+	//1. Reset state
 	LevelMap.Empty();
 	CurrentRoomID = 0;
-
-	/* --- 1) Setup Room Nodes --- */
-
-	//Populate Level Map with Base Nodes
-	CreateBaseLevelMap(NumRooms);
-
-	//Setup Special Rooms based on how many rooms we have
-	TArray<int32> SpecialNodes;
-	if (NumRooms > 3)
-	{
-		//If we have more than 3 rooms, we can have a special room
-		SpecialNodes.Add(1);
-		LevelMap[SpecialNodes[0]].RoomType = ERoomType::Special;
-
-		if (NumRooms > 4)
-		{
-			//If we have more than 4 rooms, we can have two special rooms
-			SpecialNodes.Add(2);
-			LevelMap[SpecialNodes[1]].RoomType = ERoomType::Special;
-		}
-	}
-
-	/* --- 2) Setup Coordinates --- */
 	TArray<FIntPoint> OccupiedCoordinates;
-	FIntPoint StartingCoordinate = FIntPoint(0, 0);
-	LevelMap[0].Coordinates = StartingCoordinate; //First room is at origin
-	OccupiedCoordinates.Add(StartingCoordinate);
+	TArray<int32> SpecialNodes;
 
-	/* --- 3) Connect Rooms --- */
+	//2. Define node roles
+	CreateBaseLevelMap(NumRooms);
+	SetupSpecialRooms(NumRooms, SpecialNodes);
+
+	//3. Build Main Path
 	TArray<int32> MainPathNodes;
-
-	//form the main path (guarantees reaching exit)
 	for (int32 i = 0; i < NumRooms; i++)
 	{
 		if (!SpecialNodes.Contains(i))
@@ -70,43 +48,25 @@ void ULevelsManager::GenerateLevel(const int32 NumRooms)
 		}
 	}
 
-	//Link the rooms on main path
+	//Place starting room at the origin
+	const FIntPoint StartingCoordinate = FIntPoint(0, 0);
+	LevelMap[0].Coordinates = FIntPoint(0, 0); //First room is at origin
+	OccupiedCoordinates.Add(StartingCoordinate);
+
+	//Link Rooms on Main Path
 	for (int32 i = 0; i < MainPathNodes.Num() - 1; i++)
 	{
-		int32 Current = MainPathNodes[i];
-		int32 Next = MainPathNodes[i + 1];
-
-		//Place next room at an empty neighbor
-		FIntPoint ConnectedCoordinates = GetRandomEmptyNeighbor(LevelMap[Current].Coordinates,
-		                                                        OccupiedCoordinates);
-		LevelMap[Next].Coordinates = ConnectedCoordinates;
-		OccupiedCoordinates.Add(ConnectedCoordinates);
-
-		//Link them together
-		LevelMap[Current].ConnectedRoomsIDs.Add(Next);
-		LevelMap[Next].ConnectedRoomsIDs.Add(Current);
-		UE_LOG(LogTemp, Warning, TEXT("Node %d connected to %d"), Current, Next)
+		ConnectRooms(MainPathNodes[i], MainPathNodes[i + 1], OccupiedCoordinates);
 	}
 
-	/* --- 4) Attach special rooms if we have them (not on the exit) --- */
-	if (SpecialNodes.Num() > 0)
+	//4. Link Special Rooms to Main Path
+	for (const int32 Node : SpecialNodes)
 	{
-		for (int32 Node : SpecialNodes)
-		{
-			const int32 ConnectToID = MainPathNodes[FMath::RandRange(0, MainPathNodes.Num() - 2)];
-			const FIntPoint SpecialCoordinates = GetRandomEmptyNeighbor(LevelMap[ConnectToID].Coordinates,
-			                                                            OccupiedCoordinates);
-
-			LevelMap[Node].Coordinates = SpecialCoordinates;
-			OccupiedCoordinates.Add(SpecialCoordinates);
-
-			LevelMap[Node].ConnectedRoomsIDs.Add(ConnectToID);
-			LevelMap[ConnectToID].ConnectedRoomsIDs.Add(Node);
-			UE_LOG(LogTemp, Warning, TEXT("Special Room connected to Node %d"), ConnectToID)
-		}
+		const int32 ConnectToID = MainPathNodes[FMath::RandRange(0, MainPathNodes.Num() - 2)];
+		ConnectRooms(ConnectToID, Node, OccupiedCoordinates);
 	}
 
-	/* --- 6) Assign Layouts to Rooms --- */
+	//5. Finalize by assigning levels to each room
 	for (auto& Room : LevelMap)
 	{
 		Room.Value.Layout = RoomsPool->GetRandomRoomByType(Room.Value.RoomType);
@@ -137,6 +97,35 @@ void ULevelsManager::CreateBaseLevelMap(const int32 NumRooms)
 
 		LevelMap.Add(i, NewNode);
 	}
+}
+
+void ULevelsManager::SetupSpecialRooms(const int32 NumRooms, TArray<int32>& OutSpecialNodes)
+{
+	if (NumRooms > 3)
+	{
+		OutSpecialNodes.Add(1);
+	}
+	else if (NumRooms > 4)
+	{
+		OutSpecialNodes.Add(2);
+	}
+
+	for (const int32 SpecialNode : OutSpecialNodes)
+	{
+		LevelMap[SpecialNode].RoomType = ERoomType::Special;
+	}
+}
+
+void ULevelsManager::ConnectRooms(const int32 From, const int32 To, TArray<FIntPoint>& OccupiedCoordinates)
+{
+	const FIntPoint ConnectedCoordinates = GetRandomEmptyNeighbor(LevelMap[From].Coordinates, OccupiedCoordinates);
+	LevelMap[To].Coordinates = ConnectedCoordinates;
+	OccupiedCoordinates.Add(ConnectedCoordinates);
+
+	//Link them together
+	LevelMap[From].ConnectedRoomsIDs.AddUnique(To);
+	LevelMap[To].ConnectedRoomsIDs.AddUnique(From);
+	UE_LOG(LogTemp, Warning, TEXT("Node %d connected to %d"), From, To)
 }
 
 FIntPoint ULevelsManager::GetRandomEmptyNeighbor(const FIntPoint Origin, const TArray<FIntPoint>& Occupied) const
@@ -176,10 +165,10 @@ EDoorDirection ULevelsManager::GetEntryDirection() const
 {
 	switch (LastExitDirection)
 	{
-	case EDoorDirection::North: return EDoorDirection::South;
-	case EDoorDirection::South: return EDoorDirection::North;
-	case EDoorDirection::East: return EDoorDirection::West;
-	case EDoorDirection::West: return EDoorDirection::East;
-	default: return EDoorDirection::None;
+	case North: return South;
+	case South: return North;
+	case East: return West;
+	case West: return East;
+	default: return None;
 	}
 }
