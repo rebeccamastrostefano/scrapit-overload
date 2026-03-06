@@ -16,7 +16,7 @@ class SCRAPIT_OVERLOAD_API UCollectObjective : public URoomObjective
 
 protected:
 	UFUNCTION()
-	void OnCollected(FWeaponData WeaponData);
+	void OnCollected(EScrapType WeaponScrapType, int32 WeaponLevel);
 
 public:
 	void ActivateObjective(ARoomManager* RoomManager) override;
