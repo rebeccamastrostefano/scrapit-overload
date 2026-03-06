@@ -4,7 +4,6 @@
 #include "Rooms/Door.h"
 #include "Mecha/MechaPawn.h"
 #include "Core/ScrapItGameInstance.h"
-#include "Kismet/GameplayStatics.h"
 #include "Rooms/LevelsManager.h"
 
 // Sets default values

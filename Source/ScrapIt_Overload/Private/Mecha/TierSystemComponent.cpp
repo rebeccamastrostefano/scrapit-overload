@@ -79,7 +79,7 @@ void UTierSystemComponent::ApplyNewTier(const FMassTier& Tier)
 	UpdateTierVisuals(CurrentTier);
 
 	//Update UI
-	OnTierChanged.Broadcast(CurrentTier);
+	OnTierChanged.Broadcast(CurrentTier); //TODO: check if it really changed
 	UE_LOG(LogTemp, Warning, TEXT("Tier Changed to: %d"), Tier.TierNumber);
 }
 

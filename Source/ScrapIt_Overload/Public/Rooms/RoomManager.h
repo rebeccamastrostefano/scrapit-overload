@@ -97,6 +97,7 @@ protected:
 	void InitializeRoom();
 	void SetupObjective();
 	void SpawnDoors(FRoomNode& RoomNode) const;
+	void InitializeCombat();
 	void ApplyRoomModifiers();
 	void TeleportPlayerToEntry() const;
 

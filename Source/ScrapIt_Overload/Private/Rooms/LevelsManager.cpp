@@ -112,7 +112,7 @@ void ULevelsManager::CreateBaseLevelMap(const int32 NumRooms)
 
 void ULevelsManager::SetupSpecialRooms(const int32 NumRooms, TArray<int32>& OutSpecialNodes)
 {
-	if (NumRooms > 3)
+	if (NumRooms == 4)
 	{
 		OutSpecialNodes.Add(1);
 	}

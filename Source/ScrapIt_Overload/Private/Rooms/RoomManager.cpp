@@ -79,23 +79,7 @@ void ARoomManager::InitializeRoom()
 	//if the room is a combat room and has not been already visited, handle enemies
 	if (RoomType == ERoomType::Combat && RoomState != ERoomState::Completed)
 	{
-		//Register to Enemy Spawner Events
-		EnemySpawner->OnEnemyEliminated.AddDynamic(this, &ARoomManager::HandleEnemyLoot);
-
-		CurrentLevelRank = PersistentManager->GetLevelRank();
-		UEnemyPool* Pool = GameInstance->GetEnemyPool(CurrentLevelRank);
-
-		//Scale up the enemy count based on level rank
-		BaseEnemyCount *= CurrentLevelRank;
-
-		//Apply modifiers
-		ApplyRoomModifiers();
-
-		//Spawn enemies in the room
-		if (Pool != nullptr)
-		{
-			EnemySpawner->RequestSpawnWave(Pool, BaseEnemyCount, SpawnInterval);
-		}
+		InitializeCombat();
 	}
 }
 
@@ -142,6 +126,27 @@ void ARoomManager::SpawnDoors(FRoomNode& RoomNode) const
 	}
 }
 
+void ARoomManager::InitializeCombat()
+{
+	//Register to Enemy Spawner Events
+	EnemySpawner->OnEnemyEliminated.AddDynamic(this, &ARoomManager::HandleEnemyLoot);
+
+	CurrentLevelRank = PersistentManager->GetLevelRank();
+	UEnemyPool* Pool = GameInstance->GetEnemyPool(CurrentLevelRank);
+
+	//Scale up the enemy count based on level rank
+	BaseEnemyCount *= CurrentLevelRank;
+
+	//Apply modifiers
+	ApplyRoomModifiers();
+
+	//Spawn enemies in the room
+	if (Pool != nullptr)
+	{
+		EnemySpawner->RequestSpawnWave(Pool, BaseEnemyCount, SpawnInterval);
+	}
+}
+
 void ARoomManager::ApplyRoomModifiers()
 {
 	//The higher the level rank, the higher the chance to get a modifier (impossible on first two ranks)
@@ -166,9 +171,8 @@ void ARoomManager::ApplyRoomModifiers()
 void ARoomManager::TeleportPlayerToEntry() const
 {
 	const EDoorDirection EntryDirection = LevelsManager->GetEntryDirection();
-	if (EntryDirection == None)
+	if (EntryDirection == None || RoomType == ERoomType::Start)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("RoomManager: Entry direction is None!"))
 		return; //Likely the starting room, player should already be in position with the PlayerStart
 	}
 
