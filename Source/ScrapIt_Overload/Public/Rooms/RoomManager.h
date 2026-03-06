@@ -71,9 +71,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Room State")
 	ARoomLayout* CurrentRoomLayout;
 
-	UPROPERTY()
-	UEnemySpawnerComponent* EnemySpawner;
-
 	//Room State
 	UPROPERTY()
 	int32 RoomID;
@@ -93,18 +90,26 @@ protected:
 	UPROPERTY()
 	ULevelsManager* LevelsManager;
 
+	UPROPERTY()
+	URoomObjective* CurrentObjective;
+
 	//Functions
 	void InitializeRoom();
+	void SetupObjective();
 	void SpawnDoors(FRoomNode& RoomNode) const;
 	void ApplyRoomModifiers();
 	void TeleportPlayerToEntry() const;
 
-	UFUNCTION()
-	void HandleEnemyLoot(FVector Location, int32 BaseDropAmount);
 
 	UFUNCTION()
 	void CompleteRoom();
 
 public:
+	UPROPERTY()
+	UEnemySpawnerComponent* EnemySpawner;
+
+	UFUNCTION()
+	void HandleEnemyLoot(FVector Location, int32 BaseDropAmount);
+
 	FOnRoomCompleted OnRoomCompleted;
 };

@@ -53,9 +53,6 @@ void ADoor::OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActo
 		MechaPawn->GetCurrentWeaponLoadout()
 	);
 
-	//Advance the room in the persistent manager
-	PersistentManager->AdvanceRoom();
-
 	//Save the direction we are leaving from
 	LevelsManager->SetLastExitDirection(DoorDirection);
 

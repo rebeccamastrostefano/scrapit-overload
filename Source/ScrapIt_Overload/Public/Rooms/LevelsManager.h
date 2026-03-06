@@ -8,6 +8,8 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "LevelsManager.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNewLevelGenerated);
+
 USTRUCT(BlueprintType)
 struct FRoomNode
 {
@@ -118,4 +120,7 @@ public:
 
 	//Helper Functions
 	EDoorDirection GetEntryDirection() const;
+
+	//Events
+	FOnNewLevelGenerated OnNewLevelGenerated;
 };

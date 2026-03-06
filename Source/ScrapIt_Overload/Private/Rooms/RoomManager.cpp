@@ -4,6 +4,7 @@
 #include "Core/PersistentManager.h"
 #include "Core/ScrapItGameInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "Rooms/Objectives/RoomObjective.h"
 #include "Scraps/ScrapFactory.h"
 
 // Sets default values
@@ -53,12 +54,13 @@ void ARoomManager::InitializeRoom()
 		SpawnDoors(RoomNode);
 
 		//If the room was already visited, complete it
-		if (RoomNode.bIsVisited)
+		if (RoomNode.bIsVisited || RoomType == ERoomType::Exit)
 		{
 			CompleteRoom();
 		}
 		else
 		{
+			SetupObjective();
 			CurrentRoomLayout->SetDoorsState(false);
 		}
 	}
@@ -79,9 +81,8 @@ void ARoomManager::InitializeRoom()
 	{
 		//Register to Enemy Spawner Events
 		EnemySpawner->OnEnemyEliminated.AddDynamic(this, &ARoomManager::HandleEnemyLoot);
-		EnemySpawner->OnEnemiesCleared.AddDynamic(this, &ARoomManager::CompleteRoom);
 
-		CurrentLevelRank = PersistentManager->GetRoomRank();
+		CurrentLevelRank = PersistentManager->GetLevelRank();
 		UEnemyPool* Pool = GameInstance->GetEnemyPool(CurrentLevelRank);
 
 		//Scale up the enemy count based on level rank
@@ -95,6 +96,16 @@ void ARoomManager::InitializeRoom()
 		{
 			EnemySpawner->RequestSpawnWave(Pool, BaseEnemyCount, SpawnInterval);
 		}
+	}
+}
+
+void ARoomManager::SetupObjective()
+{
+	if (GameInstance->RoomObjectives.Contains(RoomType))
+	{
+		CurrentObjective = NewObject<URoomObjective>(this, GameInstance->RoomObjectives[RoomType]);
+		CurrentObjective->OnObjectiveFinished.AddDynamic(this, &ARoomManager::CompleteRoom);
+		CurrentObjective->ActivateObjective(this);
 	}
 }
 
@@ -188,7 +199,7 @@ void ARoomManager::TeleportPlayerToEntry() const
 
 		if (Player != nullptr && EntryPoint != nullptr)
 		{
-			const FVector SpawnLocation = EntryPoint->GetComponentLocation() + (EntryPoint->GetForwardVector() * 200.f);
+			const FVector SpawnLocation = EntryPoint->GetComponentLocation() + (EntryPoint->GetForwardVector() * 300.f);
 			Player->SetActorLocationAndRotation(SpawnLocation, EntryPoint->GetComponentRotation());
 		}
 		UE_LOG(LogTemp, Warning, TEXT("RoomManager: Teleported player to room entry point!"))

@@ -20,19 +20,19 @@ USTRUCT(BlueprintType)
 struct FMassTier
 {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int32 TierNumber;
-	
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int32 UpgradeThreshold;
-	
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int32 DowngradeThreshold;
-	
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (UIMin = "0.1", ClampMin = "0.1", ClampMax = "1.0"))
 	float SpeedPenalty;
-	
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (UIMin = "0.1", ClampMin = "0.1", ClampMax = "1.0"))
 	float SteeringPenalty;
 };
@@ -43,10 +43,10 @@ struct FWeaponData
 	GENERATED_BODY()
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	EScrapType ScrapWeaponType;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	int32 CurrentLevel = 1;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	EWeaponSocket Socket = EWeaponSocket::Back;
 };
@@ -58,13 +58,13 @@ struct FMechaRunState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mecha Data")
 	int CurrentScraps = 0;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mecha Data")
 	int32 CurrentMassTierNumber = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mecha Data")
 	float CurrentHealth = 0;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mecha Data")
 	TArray<FWeaponData> WeaponLoadout;
 };
@@ -73,48 +73,54 @@ UCLASS()
 class SCRAPIT_OVERLOAD_API UPersistentManager : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
+
 protected:
 	//Run Data
 	UPROPERTY(BlueprintReadOnly, Category = "Run Data")
-	int32 CurrentRoomRank = 1;
-	
+	int32 CurrentLevelRank = 0;
+
 	UPROPERTY(BlueprintReadOnly, Category = "Run Data")
 	FMechaRunState CurrentMechaState;
-	
+
 	UPROPERTY(BlueprintReadOnly, Category = "Run Data")
 	int32 TotalGoldenScraps = 0;
-	
+
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
-	
+
 	//GETTERS
 	UFUNCTION(BlueprintPure, Category = "Run Data")
-	int32 GetRoomRank() const { return CurrentRoomRank; };
-	
+	int32 GetLevelRank() const { return CurrentLevelRank; };
+
 	UFUNCTION(BlueprintPure, Category = "Run Data")
 	FMechaRunState GetMechaState() const { return CurrentMechaState; }
-	
+
 	//SETTERS
 	UFUNCTION(BlueprintCallable, Category = "Run Data")
-	void SaveMechaState(const float Scraps, const float Health, const int CurrentMassTierNumber, const TArray<FWeaponData>& Weapons)
+	void SaveMechaState(const float Scraps, const float Health, const int CurrentMassTierNumber,
+	                    const TArray<FWeaponData>& Weapons)
 	{
 		CurrentMechaState.CurrentScraps = Scraps;
 		CurrentMechaState.CurrentHealth = Health;
 		CurrentMechaState.WeaponLoadout = Weapons;
 		CurrentMechaState.CurrentMassTierNumber = CurrentMassTierNumber;
 	}
-	
+
 	UFUNCTION(BlueprintCallable, Category = "Run Data")
-	void AdvanceRoom() { CurrentRoomRank++; };
-	
+	void AdvanceLevel()
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Advancing Level"));
+		CurrentLevelRank++;
+	};
+
 	UFUNCTION(BlueprintCallable, Category = "Run Data")
 	void ResetRun()
 	{
-		CurrentRoomRank = 1;
+		CurrentLevelRank = 0;
 		CurrentMechaState = FMechaRunState();
-	};
-	
+	}
+
 	UFUNCTION(BlueprintCallable, Category = "Run Data")
-	void AddGoldenScrap(int32 Amount) { TotalGoldenScraps += Amount; };
+	void AddGoldenScrap(const int32 Amount) { TotalGoldenScraps += Amount; };
 };

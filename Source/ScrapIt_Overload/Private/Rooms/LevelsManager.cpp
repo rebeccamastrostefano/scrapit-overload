@@ -2,6 +2,8 @@
 
 
 #include "Rooms/LevelsManager.h"
+
+#include "Core/PersistentManager.h"
 #include "Core/ScrapItGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -9,9 +11,17 @@ void ULevelsManager::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
+	Collection.InitializeDependency(UPersistentManager::StaticClass());
+
 	if (const UScrapItGameInstance* GameInstance = Cast<UScrapItGameInstance>(GetGameInstance()))
 	{
 		RoomsPool = GameInstance->RoomsPool;
+	}
+
+	if (UPersistentManager* PersistentManager = GetGameInstance()->GetSubsystem<UPersistentManager>())
+	{
+		OnNewLevelGenerated.AddDynamic(PersistentManager, &UPersistentManager::AdvanceLevel);
+		UE_LOG(LogTemp, Warning, TEXT("Subscribed to Level Generation"));
 	}
 }
 
@@ -72,6 +82,7 @@ void ULevelsManager::GenerateLevel(const int32 NumRooms)
 		Room.Value.Layout = RoomsPool->GetRandomRoomByType(Room.Value.RoomType);
 	}
 
+	OnNewLevelGenerated.Broadcast();
 	UE_LOG(LogTemp, Warning, TEXT("Level Generation Complete with %d Rooms"), NumRooms);
 }
 
