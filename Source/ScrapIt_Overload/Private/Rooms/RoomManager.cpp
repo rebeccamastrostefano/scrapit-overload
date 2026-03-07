@@ -103,19 +103,19 @@ void ARoomManager::SpawnDoors(FRoomNode& RoomNode) const
 		FName TargetSocket = NAME_None;
 		if (Difference == FIntPoint(0, 1))
 		{
-			TargetSocket = "Door_N";
+			TargetSocket = GetDoorSocketName(North);
 		}
 		else if (Difference == FIntPoint(0, -1))
 		{
-			TargetSocket = "Door_S";
+			TargetSocket = GetDoorSocketName(South);
 		}
 		else if (Difference == FIntPoint(1, 0))
 		{
-			TargetSocket = "Door_E";
+			TargetSocket = GetDoorSocketName(East);
 		}
 		else if (Difference == FIntPoint(-1, 0))
 		{
-			TargetSocket = "Door_W";
+			TargetSocket = GetDoorSocketName(West);
 		}
 		else
 		{
@@ -170,33 +170,14 @@ void ARoomManager::ApplyRoomModifiers()
 
 void ARoomManager::TeleportPlayerToEntry() const
 {
-	const EDoorDirection EntryDirection = LevelsManager->GetEntryDirection();
+	const EDoorDirection EntryDirection = LevelsManager->
+		GetOppositeDoorDirection(LevelsManager->GetLastExitDirection());
 	if (EntryDirection == None || RoomType == ERoomType::Start)
 	{
 		return; //Likely the starting room, player should already be in position with the PlayerStart
 	}
 
-	FName DirectionTag;
-	switch (EntryDirection)
-	{
-	case North:
-		DirectionTag = "Door_N";
-		break;
-	case South:
-		DirectionTag = "Door_S";
-		break;
-	case West:
-		DirectionTag = "Door_W";
-		break;
-	case East:
-		DirectionTag = "Door_E";
-		break;
-	default:
-		DirectionTag = "Door_S";
-		break;
-	}
-
-	USceneComponent* EntryPoint = CurrentRoomLayout->GetDoorAtSocket(DirectionTag);
+	USceneComponent* EntryPoint = CurrentRoomLayout->GetDoorAtSocket(GetDoorSocketName(EntryDirection));
 	if (EntryPoint != nullptr)
 	{
 		AActor* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);

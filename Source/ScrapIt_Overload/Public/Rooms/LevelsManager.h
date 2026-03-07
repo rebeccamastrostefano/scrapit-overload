@@ -16,9 +16,6 @@ struct FRoomNode
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadOnly)
-	int32 RoomID = -1;
-
-	UPROPERTY(BlueprintReadOnly)
 	FIntPoint Coordinates;
 
 	UPROPERTY(BlueprintReadOnly)
@@ -62,7 +59,7 @@ protected:
 	UPROPERTY()
 	URoomsPool* RoomsPool;
 
-	EDoorDirection LastExitDirection = EDoorDirection::None;
+	EDoorDirection LastExitDirection = None;
 
 	const TArray<FIntPoint> Directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
 
@@ -100,6 +97,12 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable, Category = "Level Generation")
+	FORCEINLINE EDoorDirection GetLastExitDirection() const
+	{
+		return LastExitDirection;
+	}
+
+	UFUNCTION(BlueprintCallable, Category = "Level Generation")
 	FORCEINLINE ELevelType GetLevelType() const
 	{
 		return CurrentLevelType;
@@ -119,7 +122,17 @@ public:
 	}
 
 	//Helper Functions
-	EDoorDirection GetEntryDirection() const;
+	FORCEINLINE static EDoorDirection GetOppositeDoorDirection(const EDoorDirection& Direction)
+	{
+		switch (Direction)
+		{
+		case North: return South;
+		case South: return North;
+		case East: return West;
+		case West: return East;
+		default: return None;
+		}
+	};
 
 	//Events
 	FOnNewLevelGenerated OnNewLevelGenerated;

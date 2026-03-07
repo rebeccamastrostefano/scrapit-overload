@@ -5,6 +5,7 @@
 
 #include "Core/ScrapItGameInstance.h"
 #include "Rooms/Door.h"
+#include "Rooms/RoomManager.h"
 
 // Sets default values
 ARoomLayout::ARoomLayout()
@@ -73,10 +74,10 @@ void ARoomLayout::SpawnDoorAtSocket(const FName SocketTag, const int32 RoomID)
 				Door->SetRoomID(RoomID);
 
 				EDoorDirection Direction = None;
-				if (SocketTag == "Door_N") Direction = North;
-				else if (SocketTag == "Door_S") Direction = South;
-				else if (SocketTag == "Door_E") Direction = East;
-				else if (SocketTag == "Door_W") Direction = West;
+				if (SocketTag == ARoomManager::GetDoorSocketName(North)) Direction = North;
+				else if (SocketTag == ARoomManager::GetDoorSocketName(South)) Direction = South;
+				else if (SocketTag == ARoomManager::GetDoorSocketName(East)) Direction = East;
+				else if (SocketTag == ARoomManager::GetDoorSocketName(West)) Direction = West;
 				Door->SetDoorDirection(Direction);
 
 				Doors.Add(Door);
@@ -114,13 +115,16 @@ USceneComponent* ARoomLayout::GetDoorAtSocket(const FName SocketTag) const
 
 void ARoomLayout::SetDoorsState(const bool bAreDoorsOpen)
 {
-	for (ADoor* Door : Doors)
+	if (bAreDoorsOpen)
 	{
-		if (bAreDoorsOpen)
+		for (ADoor* Door : Doors)
 		{
 			Door->Open();
 		}
-		else
+	}
+	else
+	{
+		for (ADoor* Door : Doors)
 		{
 			Door->Close();
 		}

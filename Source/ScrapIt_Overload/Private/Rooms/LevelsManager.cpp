@@ -91,7 +91,6 @@ void ULevelsManager::CreateBaseLevelMap(const int32 NumRooms)
 	for (int32 i = 0; i < NumRooms; ++i)
 	{
 		FRoomNode NewNode;
-		NewNode.RoomID = i;
 
 		if (i == 0)
 		{
@@ -170,16 +169,4 @@ void ULevelsManager::MarkRoomAsVisited(const int32 RoomID)
 void ULevelsManager::LoadRoomByID(const int32 RoomID) const
 {
 	UGameplayStatics::OpenLevelBySoftObjectPtr(this, LevelMap[RoomID].Layout);
-}
-
-EDoorDirection ULevelsManager::GetEntryDirection() const
-{
-	switch (LastExitDirection)
-	{
-	case North: return South;
-	case South: return North;
-	case East: return West;
-	case West: return East;
-	default: return None;
-	}
 }

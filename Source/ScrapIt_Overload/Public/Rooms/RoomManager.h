@@ -101,7 +101,6 @@ protected:
 	void ApplyRoomModifiers();
 	void TeleportPlayerToEntry() const;
 
-
 	UFUNCTION()
 	void CompleteRoom();
 
@@ -113,4 +112,17 @@ public:
 	void HandleEnemyLoot(FVector Location, int32 BaseDropAmount);
 
 	FOnRoomCompleted OnRoomCompleted;
+
+	//Helpers
+	FORCEINLINE static FName GetDoorSocketName(EDoorDirection Direction)
+	{
+		switch (Direction)
+		{
+		case North: return "Door_N";
+		case South: return "Door_S";
+		case West: return "Door_W";
+		case East: return "Door_E";
+		default: return "Door_S";
+		}
+	};
 };
