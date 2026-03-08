@@ -32,9 +32,17 @@ void AWeaponScrews::OverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	if (OtherActor != nullptr && OtherActor != GetOwner() && OtherActor->GetClass()->IsChildOf(
 		AEnemyBase::StaticClass()))
 	{
-		if (IDamageable* Target = Cast<IDamageable>(OtherActor))
+		// Check if hit is from the front
+		FVector ToEnemy = (OtherActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+		FVector Forward = GetActorForwardVector();
+		float DotProduct = FVector::DotProduct(Forward, ToEnemy);
+
+		if (DotProduct > 0.5f) // 60 degree cone
 		{
-			Target->TakeDamage(BaseDamage);
+			if (IDamageable* Target = Cast<IDamageable>(OtherActor))
+			{
+				Target->TakeDamage(BaseDamage);
+			}
 		}
 	}
 }
