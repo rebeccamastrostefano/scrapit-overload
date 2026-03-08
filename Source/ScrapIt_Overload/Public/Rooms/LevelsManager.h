@@ -135,5 +135,6 @@ public:
 	};
 
 	//Events
+	UPROPERTY(BlueprintAssignable, Category = "Level Generation")
 	FOnNewLevelGenerated OnNewLevelGenerated;
 };

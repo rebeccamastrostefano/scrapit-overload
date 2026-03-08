@@ -373,7 +373,9 @@ void AMechaPawn::DamageHealth(const float DamageAmount)
 
 void AMechaPawn::Die()
 {
-	//TODO: Death
+	OnPlayerDeath.Broadcast();
+	PersistentManager->ResetRun();
+	GameInstance->LoadStartingLevel();
 	UE_LOG(LogTemp, Warning, TEXT("Game Over"));
 }
 

@@ -16,6 +16,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScrapCountChanged, int32, NewScra
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float, Health);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerDeath);
+
 UCLASS()
 class SCRAPIT_OVERLOAD_API AMechaPawn : public APawn, public IDamageable
 {
@@ -249,6 +251,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Mecha Stats")
 	FOnHealthChanged OnHealthChanged;
+
+	UPROPERTY(BlueprintAssignable, Category = "Mecha Stats")
+	FOnPlayerDeath OnPlayerDeath;
 
 	/* --- Public Functions --- */
 	virtual void TakeDamage(const float Amount) override;
