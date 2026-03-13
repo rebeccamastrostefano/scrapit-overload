@@ -3,9 +3,8 @@
 
 #include "Weapons/WeaponBase.h"
 
+#include "Core/FunctionLibrary.h"
 #include "Core/ScrapItGameInstance.h"
-#include "Enemies/EnemyBase.h"
-#include "Engine/OverlapResult.h"
 
 // Sets default values
 AWeaponBase::AWeaponBase()
@@ -34,50 +33,27 @@ void AWeaponBase::BeginPlay()
 
 AActor* AWeaponBase::FindNearestEnemy() const
 {
-	TArray<FOverlapResult> Overlaps;
-	FCollisionShape Scope = FCollisionShape::MakeSphere(BaseRange);
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(GetOwner());
+	AActor* PotentialTarget = UFunctionLibrary::GetClosestEnemy(this, BaseRange);
 
-	//Get all pawns in range
-	if (!GetWorld()->OverlapMultiByChannel(Overlaps, GetActorLocation(), FQuat::Identity, ECC_Pawn, Scope, Params))
+	if (PotentialTarget && IsInsideFireCone(PotentialTarget))
 	{
-		return nullptr;
+		return PotentialTarget;
 	}
 
-	AActor* NearestEnemy = nullptr;
-	float MinDistSquared = FMath::Square(BaseRange);
-	const FVector ActorLocation = GetActorLocation();
+	return nullptr;
+}
+
+bool AWeaponBase::IsInsideFireCone(const AActor* Target) const
+{
+	if (Target == nullptr)
+	{
+		return false;
+	}
+
 	const FVector Forward = GetSocketRotation().Vector();
+	const FVector ToTarget = (Target->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 
-	for (const FOverlapResult& Result : Overlaps)
-	{
-		AActor* const OtherActor = Result.GetActor();
-
-		//Check for interface
-		if (OtherActor == nullptr || !OtherActor->GetClass()->IsChildOf(AEnemyBase::StaticClass()))
-		{
-			continue;
-		}
-
-		const FVector EnemyLocation = OtherActor->GetActorLocation();
-		const FVector ToEnemy = (EnemyLocation - ActorLocation).GetSafeNormal();
-
-		//Check if enemy is in fire cone
-		if (FVector::DotProduct(Forward, ToEnemy) < FireConeThreshold)
-		{
-			continue;
-		}
-
-		//Check if in range
-		const float DistSquared = FVector::DistSquared(EnemyLocation, ActorLocation);
-		if (DistSquared < MinDistSquared)
-		{
-			MinDistSquared = DistSquared;
-			NearestEnemy = OtherActor;
-		}
-	}
-	return NearestEnemy;
+	return FVector::DotProduct(Forward, ToTarget) >= FireConeThreshold;
 }
 
 void AWeaponBase::TrackEnemy(const float DeltaTime)

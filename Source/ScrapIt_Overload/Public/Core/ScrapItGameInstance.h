@@ -35,6 +35,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Global References")
 	TMap<EScrapType, TSubclassOf<AWeaponBase>> ScrapTypeToWeaponBP;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Global References")
+	TMap<EScrapType, UTexture2D*> WeaponToImage;
+
 	UPROPERTY(EditAnywhere, Category = "Global References")
 	TMap<int32, UEnemyPool*> RankToEnemyPool;
 

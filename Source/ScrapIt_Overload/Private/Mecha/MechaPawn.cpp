@@ -171,9 +171,9 @@ void AMechaPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 		EnhancedInputComponent->BindAction(ThrustAction, ETriggerEvent::Triggered, this, &AMechaPawn::ApplyThrust);
 		EnhancedInputComponent->BindAction(TurnAction, ETriggerEvent::Triggered, this, &AMechaPawn::ApplySteer);
 		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Triggered, this, &AMechaPawn::PullScraps);
-		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Started, this, &AMechaPawn::ToggleMagnet);
-		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Canceled, this, &AMechaPawn::ToggleMagnet);
-		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Completed, this, &AMechaPawn::ToggleMagnet);
+		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Started, this, &AMechaPawn::StartMagnet);
+		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Canceled, this, &AMechaPawn::StopMagnet);
+		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Completed, this, &AMechaPawn::StopMagnet);
 	}
 }
 
@@ -304,9 +304,16 @@ void AMechaPawn::PullScraps()
 	}
 }
 
-void AMechaPawn::ToggleMagnet()
+void AMechaPawn::StartMagnet()
 {
-	bIsMagnetActive = !bIsMagnetActive;
+	bIsMagnetActive = true;
+	OnMagnetStateChange.Broadcast(true);
+}
+
+void AMechaPawn::StopMagnet()
+{
+	bIsMagnetActive = false;
+	OnMagnetStateChange.Broadcast(false);
 }
 
 /* --- Scrap - Tier Management --- */
