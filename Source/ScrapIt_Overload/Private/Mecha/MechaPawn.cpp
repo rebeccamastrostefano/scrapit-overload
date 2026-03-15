@@ -371,6 +371,7 @@ void AMechaPawn::DamageHealth(const float DamageAmount)
 {
 	CurrentHealth -= DamageAmount;
 	OnHealthChanged.Broadcast(CurrentHealth);
+	OnPlayerTakeDamage.Broadcast();
 
 	if (CurrentHealth <= 0)
 	{

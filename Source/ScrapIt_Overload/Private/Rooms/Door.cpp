@@ -56,8 +56,8 @@ void ADoor::OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActo
 	LevelsManager->SetLastExitDirection(DoorDirection);
 
 	//Load the next level based on the target room id
+	LevelsManager->TransitionToRoomByID(TargetRoomID);
 	LevelsManager->SetCurrentRoomID(TargetRoomID);
-	LevelsManager->LoadRoomByID(TargetRoomID);
 }
 
 void ADoor::Open()

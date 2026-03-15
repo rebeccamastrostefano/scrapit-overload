@@ -2,10 +2,8 @@
 
 
 #include "Rooms/LevelsManager.h"
-
 #include "Core/PersistentManager.h"
 #include "Core/ScrapItGameInstance.h"
-#include "Kismet/GameplayStatics.h"
 
 void ULevelsManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -166,7 +164,11 @@ void ULevelsManager::MarkRoomAsVisited(const int32 RoomID)
 	LevelMap[RoomID].bIsVisited = true;
 }
 
-void ULevelsManager::LoadRoomByID(const int32 RoomID) const
+void ULevelsManager::TransitionToRoomByID(const int32 RoomID)
 {
-	UGameplayStatics::OpenLevelBySoftObjectPtr(this, LevelMap[RoomID].Layout);
+	UScrapItGameInstance* GameInstance = GetWorld()->GetGameInstance<UScrapItGameInstance>();
+	if (GameInstance != nullptr)
+	{
+		GameInstance->LoadLevel(LevelMap[RoomID].Layout);
+	}
 }

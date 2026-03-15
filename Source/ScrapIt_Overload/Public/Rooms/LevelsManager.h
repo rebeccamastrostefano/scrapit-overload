@@ -81,7 +81,7 @@ public:
 	void MarkRoomAsVisited(const int32 RoomID);
 
 	UFUNCTION(BlueprintCallable, Category = "Level Generation")
-	void LoadRoomByID(const int32 RoomID) const;
+	void TransitionToRoomByID(const int32 RoomID);
 
 	//GETTERS
 	UFUNCTION(BlueprintCallable, Category = "Level Generation")

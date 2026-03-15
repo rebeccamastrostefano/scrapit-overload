@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Rooms/EnemyPool.h"
+#include "Engine/StreamableManager.h"
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Rooms/LevelPool.h"
@@ -25,6 +26,9 @@ class SCRAPIT_OVERLOAD_API UScrapItGameInstance : public UGameInstance
 public:
 	UPROPERTY(EditAnywhere, Category = "Global References")
 	TSoftObjectPtr<UWorld> StartingLevel;
+
+	UPROPERTY(EditAnywhere, Category = "Global References")
+	TSubclassOf<UUserWidget> LoadingScreenWidget;
 
 	UPROPERTY(EditAnywhere, Category = "Global References")
 	TMap<EScrapType, TSubclassOf<AScrapBase>> ScrapTypeToBP;
@@ -56,6 +60,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Global References")
 	TSubclassOf<AActor> DoorBP;
 
+	UPROPERTY()
+	UUserWidget* LoadingScreen;
+
+	TSoftObjectPtr<UWorld> PendingLevelLoading;
+	TSharedPtr<FStreamableHandle> StreamingHandle;
+
 	UFUNCTION()
 	UEnemyPool* GetEnemyPool(const int32 Rank) const
 	{
@@ -67,4 +77,10 @@ public:
 	{
 		UGameplayStatics::OpenLevelBySoftObjectPtr(this, StartingLevel);
 	}
+
+	UFUNCTION()
+	void LoadLevel(TSoftObjectPtr<UWorld> LevelToLoad);
+
+	UFUNCTION()
+	void OnLevelLoaded();
 };

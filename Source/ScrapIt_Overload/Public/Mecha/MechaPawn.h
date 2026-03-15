@@ -16,6 +16,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScrapCountChanged, int32, NewScra
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float, Health);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerTakeDamage);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerDeath);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMagnetStateChange, bool, bIsActive);
@@ -253,6 +255,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Mecha Stats")
 	FOnHealthChanged OnHealthChanged;
+
+	UPROPERTY(BlueprintAssignable, Category = "Mecha Stats")
+	FOnPlayerTakeDamage OnPlayerTakeDamage;
 
 	UPROPERTY(BlueprintAssignable, Category = "Mecha Stats")
 	FOnPlayerDeath OnPlayerDeath;
