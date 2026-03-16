@@ -1,9 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+#include "Core/ScrapItGameInstance.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/AssetManager.h"
-#include "Core/ScrapItGameInstance.h"
-
 #include "Engine/StreamableManager.h"
 
 void UScrapItGameInstance::LoadLevel(TSoftObjectPtr<UWorld> LevelToLoad)

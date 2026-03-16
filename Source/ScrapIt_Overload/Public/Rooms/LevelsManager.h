@@ -8,6 +8,8 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "LevelsManager.generated.h"
 
+class ARoomLayout;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNewLevelGenerated);
 
 USTRUCT(BlueprintType)
@@ -22,10 +24,13 @@ struct FRoomNode
 	ERoomType RoomType = ERoomType::Combat;
 
 	UPROPERTY(BlueprintReadOnly)
-	TSoftObjectPtr<UWorld> Layout;
+	TSoftObjectPtr<UWorld> Map;
 
 	UPROPERTY(BlueprintReadOnly)
 	TArray<int32> ConnectedRoomsIDs;
+
+	UPROPERTY(BlueprintReadOnly)
+	TSubclassOf<ARoomLayout> RoomLayout;
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsVisited = false;

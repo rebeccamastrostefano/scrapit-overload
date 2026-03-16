@@ -3,10 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Door.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/Actor.h"
 #include "RoomLayout.generated.h"
+
+class ADoor;
 
 UCLASS()
 class SCRAPIT_OVERLOAD_API ARoomLayout : public AActor

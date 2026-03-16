@@ -2,7 +2,6 @@
 
 
 #include "Rooms/RoomLayout.h"
-
 #include "Core/ScrapItGameInstance.h"
 #include "Rooms/Door.h"
 #include "Rooms/RoomManager.h"

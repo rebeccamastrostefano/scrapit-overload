@@ -35,20 +35,26 @@ void ARoomManager::BeginPlay()
 
 void ARoomManager::InitializeRoom()
 {
-	//Spawn a random room layout
-	const TSubclassOf<ARoomLayout> RoomLayoutClass = RoomLayoutPool[FMath::RandRange(0, RoomLayoutPool.Num() - 1)];
-	CurrentRoomLayout = GetWorld()->SpawnActor<ARoomLayout>(RoomLayoutClass);
-
-	if (CurrentRoomLayout == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("RoomManager: Room Layout actor NOT FOUND in the level!"));
-		return;
-	}
-
 	RoomID = LevelsManager->GetCurrentRoomID();
 	if (LevelsManager->GetLevelMap().Contains(RoomID))
 	{
 		FRoomNode& RoomNode = LevelsManager->GetLevelMap()[RoomID];
+
+		if (RoomNode.bIsVisited)
+		{
+			//If we already visited the room, we should have a room layout assigned, use it
+			CurrentRoomLayout = GetWorld()->SpawnActor<ARoomLayout>(RoomNode.RoomLayout);
+		}
+		else
+		{
+			//Spawn a random room layout
+			const TSubclassOf<ARoomLayout> RoomLayoutClass = RoomLayoutPool[FMath::RandRange(
+				0, RoomLayoutPool.Num() - 1)];
+			CurrentRoomLayout = GetWorld()->SpawnActor<ARoomLayout>(RoomLayoutClass);
+
+			//Assign it
+			RoomNode.RoomLayout = RoomLayoutClass;
+		}
 
 		//Spawn doors according to connections
 		SpawnDoors(RoomNode);
@@ -65,7 +71,7 @@ void ARoomManager::InitializeRoom()
 		}
 	}
 
-	//Init Room Layout (assigned in level)
+	//Init Room Layout
 	if (CurrentRoomLayout == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("RoomManager: Room Layout is NULL!"));

@@ -77,7 +77,7 @@ void ULevelsManager::GenerateLevel(const int32 NumRooms)
 	//5. Finalize by assigning levels to each room
 	for (auto& Room : LevelMap)
 	{
-		Room.Value.Layout = RoomsPool->GetRandomRoomByType(Room.Value.RoomType);
+		Room.Value.Map = RoomsPool->GetRandomRoomByType(Room.Value.RoomType);
 	}
 
 	OnNewLevelGenerated.Broadcast();
@@ -169,6 +169,6 @@ void ULevelsManager::TransitionToRoomByID(const int32 RoomID)
 	UScrapItGameInstance* GameInstance = GetWorld()->GetGameInstance<UScrapItGameInstance>();
 	if (GameInstance != nullptr)
 	{
-		GameInstance->LoadLevel(LevelMap[RoomID].Layout);
+		GameInstance->LoadLevel(LevelMap[RoomID].Map);
 	}
 }
