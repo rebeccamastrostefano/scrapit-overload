@@ -85,11 +85,20 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Run Data")
 	int32 TotalGoldenScraps = 0;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Run Data")
+	EScrapType StartingWeaponType = EScrapType::Generic;
+
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
 	//GETTERS
+	UFUNCTION(BlueprintPure, Category = "Run Data")
+	EScrapType GetStartingWeapon() const
+	{
+		return StartingWeaponType;
+	}
+
 	UFUNCTION(BlueprintPure, Category = "Run Data")
 	int32 GetLevelRank() const { return CurrentLevelRank; };
 
@@ -97,6 +106,12 @@ public:
 	FMechaRunState GetMechaState() const { return CurrentMechaState; }
 
 	//SETTERS
+	UFUNCTION(BlueprintCallable, Category = "Run Data")
+	void SetStartingWeapon(const EScrapType WeaponType)
+	{
+		StartingWeaponType = WeaponType;
+	}
+
 	UFUNCTION(BlueprintCallable, Category = "Run Data")
 	void SaveMechaState(const float Scraps, const float Health, const int CurrentMassTierNumber,
 	                    const TArray<FWeaponData>& Weapons)

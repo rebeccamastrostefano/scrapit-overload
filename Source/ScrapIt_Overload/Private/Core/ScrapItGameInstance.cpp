@@ -16,9 +16,10 @@ void UScrapItGameInstance::LoadLevel(TSoftObjectPtr<UWorld> LevelToLoad)
 
 	PendingLevelLoading = LevelToLoad;
 	FStreamableManager& StreamableManager = UAssetManager::Get().GetStreamableManager();
-	StreamingHandle = StreamableManager.RequestAsyncLoad(LevelToLoad.ToSoftObjectPath(),
-	                                                     FStreamableDelegate::CreateUObject(
-		                                                     this, &UScrapItGameInstance::OnLevelLoaded));
+	StreamingHandle = StreamableManager.RequestAsyncLoad(
+		LevelToLoad.ToSoftObjectPath(),
+		FStreamableDelegate::CreateUObject(this, &UScrapItGameInstance::OnLevelLoaded)
+	);
 }
 
 void UScrapItGameInstance::OnLevelLoaded()
