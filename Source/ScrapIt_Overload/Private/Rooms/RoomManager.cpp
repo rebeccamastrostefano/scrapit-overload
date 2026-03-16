@@ -30,7 +30,7 @@ void ARoomManager::BeginPlay()
 	LevelsManager = GetGameInstance()->GetSubsystem<ULevelsManager>();
 	check(LevelsManager != nullptr);
 
-	InitializeRoom();
+	GetWorldTimerManager().SetTimerForNextTick(this, &ARoomManager::InitializeRoom);
 }
 
 void ARoomManager::InitializeRoom()

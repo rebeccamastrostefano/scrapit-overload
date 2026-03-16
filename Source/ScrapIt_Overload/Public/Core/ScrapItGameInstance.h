@@ -78,9 +78,11 @@ public:
 		UGameplayStatics::OpenLevelBySoftObjectPtr(this, StartingLevel);
 	}
 
-	UFUNCTION()
-	void LoadLevel(TSoftObjectPtr<UWorld> LevelToLoad);
+	virtual void Init() override;
 
 	UFUNCTION()
-	void OnLevelLoaded();
+	void BeginLoadingScreen(const FString& MapName);
+
+	UFUNCTION()
+	void LoadLevel(TSoftObjectPtr<UWorld> LevelToLoad);
 };
