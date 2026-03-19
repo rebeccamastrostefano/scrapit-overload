@@ -13,8 +13,8 @@ enum class ELevelType : uint8
 	Shop,
 	Maintenance,
 	Treasure,
-	Gamble,
-	Random
+	MiniBoss,
+	FinalBoss
 };
 
 USTRUCT()
@@ -27,6 +27,9 @@ struct FLevelWeight
 
 	UPROPERTY(EditAnywhere)
 	float Weight;
+
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UWorld> Map;
 };
 
 UCLASS()
@@ -39,4 +42,6 @@ public:
 	TArray<FLevelWeight> Levels;
 
 	ELevelType GetRandomLevelType();
+
+	TSoftObjectPtr<UWorld> GetLevelMap(ELevelType LevelType);
 };

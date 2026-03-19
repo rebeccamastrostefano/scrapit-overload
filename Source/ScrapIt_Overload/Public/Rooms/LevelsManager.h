@@ -5,12 +5,38 @@
 #include "CoreMinimal.h"
 #include "LevelPool.h"
 #include "RoomsPool.h"
+#include "Core/PersistentManager.h"
+#include "Core/ScrapItGameInstance.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "LevelsManager.generated.h"
 
 class ARoomLayout;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNewLevelGenerated);
+
+USTRUCT(BlueprintType)
+struct FLevelNode
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 LevelID = 0;
+
+	UPROPERTY(BlueprintReadOnly)
+	ELevelType LevelType;
+
+	UPROPERTY(BlueprintReadOnly)
+	TArray<int32> ConnectedLevels;
+};
+
+USTRUCT(BlueprintType)
+struct FLevelRank
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	TArray<FLevelNode> Levels;
+};
 
 USTRUCT(BlueprintType)
 struct FRoomNode
@@ -52,6 +78,14 @@ class SCRAPIT_OVERLOAD_API ULevelsManager : public UGameInstanceSubsystem
 	GENERATED_BODY()
 
 protected:
+	//Run Generation
+	UPROPERTY(BlueprintReadOnly, Category = "Run Generation")
+	TArray<FLevelRank> RunMap;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Run Generation")
+	int32 CurrentLevelID = 0;
+
+	//Level Generation
 	UPROPERTY(BlueprintReadOnly, Category = "Level Generation")
 	TMap<int32, FRoomNode> LevelMap;
 
@@ -62,12 +96,19 @@ protected:
 	int32 CurrentRoomID = 0;
 
 	UPROPERTY()
+	UScrapItGameInstance* GameInstance;
+
+	UPROPERTY()
+	UPersistentManager* PersistentManager;
+
+	UPROPERTY()
 	URoomsPool* RoomsPool;
 
 	EDoorDirection LastExitDirection = None;
 
 	const TArray<FIntPoint> Directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
 
+	void GenerateSpecialLevel(const ELevelType LevelType);
 	void CreateBaseLevelMap(const int32 NumRooms);
 	void SetupSpecialRooms(const int32 NumRooms, TArray<int32>& OutSpecialNodes);
 	void ConnectRooms(const int32 From, const int32 To, TArray<FIntPoint>& OccupiedCoordinates);
@@ -79,8 +120,22 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
+	//Run Generation
+	UFUNCTION(BlueprintCallable, Category = "Run Generation")
+	void GenerateRun();
+
+	UFUNCTION(Category = "Run Generation")
+	void ConnectToNextRank(FLevelNode& LevelToConnect, TArray<FLevelNode> NextRankLevels);
+
+	UFUNCTION(Category = "Run Generation")
+	void EnsureLevelConnections(const int32 ParentRank, const int32 NextRank);
+
+	UFUNCTION(BlueprintCallable, Category = "Run Generation")
+	void SelectNextLevel(int32 TargetLevelID);
+
+	//Level Generation
 	UFUNCTION(BlueprintCallable, Category = "Level Generation")
-	void GenerateLevel(const int32 NumRooms);
+	void GenerateStandardLevel();
 
 	UFUNCTION(BlueprintCallable, Category = "Level Generation")
 	void MarkRoomAsVisited(const int32 RoomID);
@@ -89,6 +144,12 @@ public:
 	void TransitionToRoomByID(const int32 RoomID);
 
 	//GETTERS
+	UFUNCTION(BlueprintCallable, Category = "Run Generation")
+	FORCEINLINE TArray<FLevelRank>& GetRunMap()
+	{
+		return RunMap;
+	}
+
 	UFUNCTION(BlueprintCallable, Category = "Level Generation")
 	FORCEINLINE TMap<int32, FRoomNode>& GetLevelMap()
 	{

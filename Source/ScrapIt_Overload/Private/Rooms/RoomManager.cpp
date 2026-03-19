@@ -59,8 +59,8 @@ void ARoomManager::InitializeRoom()
 		//Spawn doors according to connections
 		SpawnDoors(RoomNode);
 
-		//If the room was already visited, complete it
-		if (RoomNode.bIsVisited || RoomType == ERoomType::Exit)
+		//If the room was already visited or if it doesn't have an objective, complete it
+		if (RoomNode.bIsVisited || RoomType == ERoomType::Exit || RoomType == ERoomType::Special)
 		{
 			CompleteRoom();
 		}
@@ -69,6 +69,11 @@ void ARoomManager::InitializeRoom()
 			SetupObjective();
 			CurrentRoomLayout->SetDoorsState(false);
 		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("RoomManager: No RoomNode for ID %d!"), RoomID);
+		return;
 	}
 
 	//Init Room Layout

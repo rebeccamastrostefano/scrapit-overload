@@ -7,27 +7,43 @@ ELevelType ULevelPool::GetRandomLevelType()
 {
 	if (Levels.Num() <= 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No rooms in pool"));
+		UE_LOG(LogTemp, Warning, TEXT("No Levels in pool"));
 		return ELevelType::Standard;
 	}
 
 	float TotalWeight = 0.f;
-	for (auto& [Room, RoomWeight] : Levels)
+	for (auto& [Level, LevelWeight, Map] : Levels)
 	{
-		TotalWeight += RoomWeight;
+		TotalWeight += LevelWeight;
 	}
 
 	const float RandomValue = FMath::RandRange(0.f, TotalWeight);
 	float WeightSum = 0.f;
 
-	for (auto& [Room, RoomWeight] : Levels)
+	for (auto& [Level, LevelWeight, Map] : Levels)
 	{
-		WeightSum += RoomWeight;
+		WeightSum += LevelWeight;
 		if (RandomValue <= WeightSum)
 		{
-			return Room;
+			return Level;
 		}
 	}
 
 	return ELevelType::Standard;
+}
+
+TSoftObjectPtr<UWorld> ULevelPool::GetLevelMap(ELevelType LevelType)
+{
+	if (LevelType == ELevelType::Standard)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LevelPool: No Map for Standard Level"));
+		return nullptr;
+	}
+
+	FLevelWeight* LevelWeight = Levels.FindByPredicate([LevelType](const FLevelWeight& Level)
+	{
+		return Level.Level == LevelType;
+	});
+
+	return LevelWeight->Map;
 }

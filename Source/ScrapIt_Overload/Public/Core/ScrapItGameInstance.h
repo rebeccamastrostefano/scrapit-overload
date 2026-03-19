@@ -49,9 +49,6 @@ public:
 	ULevelPool* LevelPool;
 
 	UPROPERTY(EditAnywhere, Category = "Global References")
-	TMap<ELevelType, TSoftObjectPtr<UWorld>> RoomLevels;
-
-	UPROPERTY(EditAnywhere, Category = "Global References")
 	URoomsPool* RoomsPool;
 
 	UPROPERTY(EditAnywhere, Category = "Global References")
