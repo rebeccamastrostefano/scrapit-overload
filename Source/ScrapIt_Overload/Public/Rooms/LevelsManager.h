@@ -174,6 +174,23 @@ public:
 		return CurrentLevelType;
 	}
 
+	UFUNCTION(BlueprintCallable, Category = "Level Generation")
+	FORCEINLINE FLevelNode GetLevelNodeByID(const int32 LevelID)
+	{
+		const FLevelRank* Rank = RunMap.FindByPredicate([=](const FLevelRank& R)
+		{
+			return R.Levels.ContainsByPredicate([=](const FLevelNode& Node)
+			{
+				return Node.LevelID == LevelID;
+			});
+		});
+
+		return *Rank->Levels.FindByPredicate([=](const FLevelNode& Node)
+		{
+			return Node.LevelID == LevelID;
+		});
+	}
+
 	//SETTERS
 	UFUNCTION()
 	FORCEINLINE void SetCurrentRoomID(const int32 RoomID)
