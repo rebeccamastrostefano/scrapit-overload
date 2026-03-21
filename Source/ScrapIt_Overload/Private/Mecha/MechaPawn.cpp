@@ -370,6 +370,7 @@ float AMechaPawn::AbsorbDamageOnShield(const float DamageAmount)
 void AMechaPawn::DamageHealth(const float DamageAmount)
 {
 	CurrentHealth -= DamageAmount;
+	ApplyImpactSlow(HitSlowIntensity);
 	OnHealthChanged.Broadcast(CurrentHealth);
 	OnPlayerTakeDamage.Broadcast();
 
@@ -385,6 +386,15 @@ void AMechaPawn::Die()
 	PersistentManager->ResetRun();
 	GameInstance->LoadStartingLevel();
 	UE_LOG(LogTemp, Warning, TEXT("Game Over"));
+}
+
+/* Other */
+void AMechaPawn::ApplyImpactSlow(const float Amount)
+{
+	if (!MechaMesh->GetPhysicsLinearVelocity().IsNearlyZero())
+	{
+		MechaMesh->SetPhysicsLinearVelocity(MechaMesh->GetPhysicsLinearVelocity() * (1.0f - Amount));
+	}
 }
 
 /* Animation */

@@ -23,6 +23,7 @@ void AWeaponScrews::BeginPlay()
 	Super::BeginPlay();
 
 	HitboxCollider->OnComponentBeginOverlap.AddDynamic(this, &AWeaponScrews::OverlapBegin);
+	Player = Cast<AMechaPawn>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 }
 
 void AWeaponScrews::OverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
@@ -42,6 +43,12 @@ void AWeaponScrews::OverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 			if (IDamageable* Target = Cast<IDamageable>(OtherActor))
 			{
 				Target->TakeDamage(BaseDamage);
+				if (Player == nullptr)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("WeaponScrews: Player is null!"));
+					return;
+				}
+				Player->ApplyImpactSlow(KnockbackForce);
 			}
 		}
 	}

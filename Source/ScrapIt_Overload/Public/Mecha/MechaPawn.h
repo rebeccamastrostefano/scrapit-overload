@@ -158,6 +158,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mecha Settings")
 	float CoreMaxHealth = 100.f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mecha Settings")
+	float HitSlowIntensity = 0.5f;
+
 	bool bIsMagnetActive = false;
 
 	/* --- Current Run State --- */
@@ -267,6 +270,8 @@ public:
 
 	/* --- Public Functions --- */
 	virtual void TakeDamage(const float Amount) override;
+
+	virtual void ApplyImpactSlow(const float Amount);
 
 	UFUNCTION(BlueprintCallable, Category = "Mecha State")
 	void StopMagnet();
