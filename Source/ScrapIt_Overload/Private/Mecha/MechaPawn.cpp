@@ -198,7 +198,7 @@ void AMechaPawn::LoadMechaState(const FMechaRunState& MechaRunState)
 	{
 		CurrentScraps = 0;
 	}
-	OnScrapCountChanged.Broadcast(CurrentScraps);
+	OnScrapCountChanged.Broadcast(CurrentScraps, false);
 
 	//Load Weapons
 	if (WeaponSystem != nullptr)
@@ -320,7 +320,8 @@ void AMechaPawn::StopMagnet()
 void AMechaPawn::AddScrap(const int32 Amount)
 {
 	CurrentScraps += Amount;
-	OnScrapCountChanged.Broadcast(CurrentScraps);
+	bool bIsIncremental = Amount > 0;
+	OnScrapCountChanged.Broadcast(CurrentScraps, bIsIncremental);
 }
 
 void AMechaPawn::UpdateTierModifiers(FMassTier Tier)
@@ -353,6 +354,8 @@ float AMechaPawn::AbsorbDamageOnShield(const float DamageAmount)
 		return DamageAmount;
 	}
 
+	OnPlayerTakeDamage.Broadcast(true);
+
 	float const TotalScrapShieldAbsorption = CurrentScraps * ScrapShieldAbsorption;
 	if (TotalScrapShieldAbsorption >= DamageAmount)
 	{
@@ -372,7 +375,7 @@ void AMechaPawn::DamageHealth(const float DamageAmount)
 	CurrentHealth -= DamageAmount;
 	ApplyImpactSlow(HitSlowIntensity);
 	OnHealthChanged.Broadcast(CurrentHealth);
-	OnPlayerTakeDamage.Broadcast();
+	OnPlayerTakeDamage.Broadcast(false);
 
 	if (CurrentHealth <= 0)
 	{

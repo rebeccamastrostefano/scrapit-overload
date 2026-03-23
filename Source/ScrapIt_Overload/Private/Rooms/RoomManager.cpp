@@ -30,6 +30,7 @@ void ARoomManager::BeginPlay()
 	LevelsManager = GetGameInstance()->GetSubsystem<ULevelsManager>();
 	check(LevelsManager != nullptr);
 
+	CurrentLevelRank = PersistentManager->GetLevelRank();
 	GetWorldTimerManager().SetTimerForNextTick(this, &ARoomManager::InitializeRoom);
 }
 
@@ -59,8 +60,9 @@ void ARoomManager::InitializeRoom()
 		//Spawn doors according to connections
 		SpawnDoors(RoomNode);
 
-		//If the room was already visited or if it doesn't have an objective, complete it
-		if (RoomNode.bIsVisited || RoomType == ERoomType::Exit || RoomType == ERoomType::Special)
+		//If the room was already visited or if it doesn't have an objective, complete it (rooms with no objectives are exit, special and start on level ranks 2 or more)
+		if (RoomNode.bIsVisited || RoomType == ERoomType::Exit || RoomType == ERoomType::Special || (RoomType ==
+			ERoomType::Start && CurrentLevelRank != 1))
 		{
 			CompleteRoom();
 		}
@@ -142,7 +144,6 @@ void ARoomManager::InitializeCombat()
 	//Register to Enemy Spawner Events
 	EnemySpawner->OnEnemyEliminated.AddDynamic(this, &ARoomManager::HandleEnemyLoot);
 
-	CurrentLevelRank = PersistentManager->GetLevelRank();
 	UEnemyPool* Pool = GameInstance->GetEnemyPool(CurrentLevelRank);
 
 	//Scale up the enemy count based on level rank
