@@ -177,18 +177,32 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Level Generation")
 	FORCEINLINE FLevelNode GetLevelNodeByID(const int32 LevelID)
 	{
-		const FLevelRank* Rank = RunMap.FindByPredicate([=](const FLevelRank& R)
+		const FLevelRank* LevelRank = RunMap.FindByPredicate([LevelID](const FLevelRank& Rank)
 		{
-			return R.Levels.ContainsByPredicate([=](const FLevelNode& Node)
+			return Rank.Levels.ContainsByPredicate([LevelID](const FLevelNode& Node)
 			{
 				return Node.LevelID == LevelID;
 			});
 		});
 
-		return *Rank->Levels.FindByPredicate([=](const FLevelNode& Node)
+		if (LevelRank == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("LevelsManager: No Level Node found with ID: %d"), LevelID);
+			return FLevelNode();
+		}
+
+		const FLevelNode* FoundNode = LevelRank->Levels.FindByPredicate([LevelID](const FLevelNode& Node)
 		{
 			return Node.LevelID == LevelID;
 		});
+
+		if (FoundNode == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("LevelsManager: No Level Node found with ID: %d"), LevelID);
+			return FLevelNode();
+		}
+
+		return *FoundNode;
 	}
 
 	//SETTERS

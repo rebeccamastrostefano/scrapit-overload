@@ -105,16 +105,10 @@ void ULevelsManager::EnsureLevelConnections(const int32 ParentRank, const int32 
 
 	for (FLevelNode& Child : ChildLevels)
 	{
-		bool bHasParent = false;
-
-		for (const FLevelNode& Parent : ParentLevels)
+		const bool bHasParent = std::any_of(ParentLevels.begin(), ParentLevels.end(), [&Child](const FLevelNode& Parent)
 		{
-			if (Parent.ConnectedLevels.Contains(Child.LevelID))
-			{
-				bHasParent = true;
-				break;
-			}
-		}
+			return Parent.ConnectedLevels.Contains(Child.LevelID);
+		});
 
 		if (!bHasParent)
 		{
