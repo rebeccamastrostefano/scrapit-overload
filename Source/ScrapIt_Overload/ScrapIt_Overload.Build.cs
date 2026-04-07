@@ -8,7 +8,7 @@ public class ScrapIt_Overload : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "NavigationSystem", "AIModule", "UMG", "MoviePlayer" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "NavigationSystem", "AIModule", "UMG", "MoviePlayer", "Niagara" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

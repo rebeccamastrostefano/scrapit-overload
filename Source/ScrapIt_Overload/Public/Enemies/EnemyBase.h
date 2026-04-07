@@ -24,6 +24,7 @@ enum class EEnemyState : uint8
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDeathData, FVector, DeathLocation, int32, ScrapAmount);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStateChanged, EEnemyState, OldState, EEnemyState, NewState);
 
 UCLASS()
@@ -37,82 +38,104 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USkeletalMeshComponent* Mesh;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USphereComponent* HurtboxSphere;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UFloatingPawnMovement* PawnMovement;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
 	class UBehaviorTree* BehaviorTree;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
 	float BaseHealth;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
 	float MoveSpeed = 500.0f;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
 	int32 BaseDropAmount;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
 	float AttackDirectionThreshold = 0.8f;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
 	float Damage = 5.0f;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
 	float DamageTraceRadius = 50.f;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
 	float DamageTraceDistance = 100.f;
-	
+
 	UPROPERTY(VisibleAnywhere)
 	UHealthComponent* VitalityComponent;
-	
+
 	UPROPERTY()
 	AAIController* AIController;
-	
+
 	UPROPERTY()
 	APawn* Player;
-	
+
 	UPROPERTY(VisibleAnywhere)
 	EEnemyState CurrentState = EEnemyState::Idle;
-	
+
+	bool bIsShielded = false;
+
 public:
 	//Functions
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	bool IsFacingPlayer() const;
-	
+
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	virtual void Attack() PURE_VIRTUAL(AEnemyBase::Attack,);
-	
+
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	virtual void TriggerDamageTrace();
-	
+
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	AAIController* GetAIController() const
 	{
 		return AIController;
 	}
-	
-	UFUNCTION(BlueprintCallable)
-	void SetState(const EEnemyState NewState);
-	
+
 	UFUNCTION()
 	virtual void Die() override;
-	
+
 	UFUNCTION()
 	virtual void TakeDamage(const float DamageAmount) override;
-	
+
+	//Getters
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE EEnemyState GetState() const
+	{
+		return CurrentState;
+	}
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE bool GetIsShielded() const
+	{
+		return bIsShielded;
+	}
+
+	//Setters
+	UFUNCTION(BlueprintCallable)
+	void SetState(const EEnemyState NewState);
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE void SetShielded(const bool Shielded)
+	{
+		bIsShielded = Shielded;
+	}
+
 	//Events
 	UPROPERTY(BlueprintAssignable)
 	FOnStateChanged OnStateChanged;
-	
+
 	UPROPERTY(BlueprintAssignable)
 	FOnDeathData OnDeath;
 };

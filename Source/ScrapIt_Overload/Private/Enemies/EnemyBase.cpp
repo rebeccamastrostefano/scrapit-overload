@@ -15,10 +15,10 @@ AEnemyBase::AEnemyBase()
 void AEnemyBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	VitalityComponent->InitializeHealth(BaseHealth);
 	VitalityComponent->OnDeath.AddDynamic(this, &AEnemyBase::Die);
-	
+
 	//Get the AIController, if null, create one and possess the enemy
 	AIController = Cast<AAIController>(GetController());
 	if (AIController == nullptr)
@@ -26,19 +26,19 @@ void AEnemyBase::BeginPlay()
 		AIController = GetWorld()->SpawnActor<AAIController>(AIControllerClass);
 		AIController->Possess(this);
 	}
-	
+
 	AIController->RunBehaviorTree(BehaviorTree);
-	
+
 	Player = GetWorld()->GetFirstPlayerController()->GetPawn();
 }
 
 void AEnemyBase::TakeDamage(const float DamageAmount)
 {
-	if (CurrentState == EEnemyState::Dead)
+	if (CurrentState == EEnemyState::Dead || bIsShielded)
 	{
 		return;
 	}
-	
+
 	VitalityComponent->ApplyDamage(DamageAmount);
 	SetState(EEnemyState::Hurt);
 }
@@ -49,19 +49,20 @@ void AEnemyBase::SetState(const EEnemyState NewState)
 	{
 		return;
 	}
-	
+
 	const EEnemyState OldState = CurrentState;
 	CurrentState = NewState;
-	
+
 	OnStateChanged.Broadcast(OldState, CurrentState);
 }
 
-bool AEnemyBase::IsFacingPlayer() const {
+bool AEnemyBase::IsFacingPlayer() const
+{
 	if (Player == nullptr)
 	{
 		return false;
 	}
-	
+
 	const FVector ToPlayer = (Player->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	return FVector::DotProduct(GetActorForwardVector(), ToPlayer) > AttackDirectionThreshold;
 }
@@ -69,16 +70,19 @@ bool AEnemyBase::IsFacingPlayer() const {
 void AEnemyBase::TriggerDamageTrace()
 {
 	const FVector Center = GetActorLocation() + (GetActorForwardVector() * DamageTraceDistance);
-	
+
 	TArray<FOverlapResult> Overlaps;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
-	
-	if (GetWorld()->OverlapMultiByObjectType(Overlaps, Center, FQuat::Identity, FCollisionObjectQueryParams(ECC_WorldDynamic), FCollisionShape::MakeSphere(DamageTraceRadius), Params))
+
+	if (GetWorld()->OverlapMultiByObjectType(Overlaps, Center, FQuat::Identity,
+	                                         FCollisionObjectQueryParams(ECC_WorldDynamic),
+	                                         FCollisionShape::MakeSphere(DamageTraceRadius), Params))
 	{
 		for (const FOverlapResult& Overlap : Overlaps)
 		{
-			if (Overlap.GetActor()->Implements<UDamageable>() && !Overlap.GetActor()->GetClass()->IsChildOf(AEnemyBase::StaticClass()))
+			if (Overlap.GetActor()->Implements<UDamageable>() && !Overlap.GetActor()->GetClass()->IsChildOf(
+				AEnemyBase::StaticClass()))
 			{
 				Cast<IDamageable>(Overlap.GetActor())->TakeDamage(Damage);
 			}
@@ -92,4 +96,3 @@ void AEnemyBase::Die()
 	OnDeath.Broadcast(GetActorLocation(), BaseDropAmount);
 	Destroy();
 }
-

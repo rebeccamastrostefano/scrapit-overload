@@ -11,6 +11,7 @@ AActor* UFunctionLibrary::GetClosestEnemy(const AActor* Looker, float Radius)
 	FCollisionShape Scope = FCollisionShape::MakeSphere(Radius);
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(Looker->GetOwner());
+	Params.AddIgnoredActor(Looker);
 
 	//Get all pawns in range
 	if (!Looker->GetWorld()->OverlapMultiByChannel(Overlaps, Looker->GetActorLocation(), FQuat::Identity, ECC_Pawn,
