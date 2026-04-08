@@ -32,30 +32,44 @@ bool AEnemySocketWitch::AttemptStartShield()
 		OverlappedActors
 	);
 
-	if (bFoundSomething && OverlappedActors.Num() > 0)
+	if (bFoundSomething)
 	{
-		// Pick the first valid enemy found
-		PrimaryShieldedAlly = Cast<AEnemyBase>(OverlappedActors[0]);
-
-		if (PrimaryShieldedAlly)
+		//Do not shield enemies that are already shielded or other SocketWitches
+		OverlappedActors.RemoveAll([](AActor* OverlappedEnemy)
 		{
-			SetState(EEnemyState::Attacking);
+			const AEnemyBase* Enemy = Cast<AEnemyBase>(OverlappedEnemy);
+			return Enemy != nullptr && (Enemy->GetIsShielded() || Cast<AEnemySocketWitch>(Enemy));
+		});
 
-			if (ShieldVfx != nullptr)
+
+		if (OverlappedActors.Num() > 0)
+		{
+			// Pick the first valid enemy found
+			PrimaryShieldedAlly = Cast<AEnemyBase>(OverlappedActors[0]);
+
+			if (PrimaryShieldedAlly)
 			{
-				ActiveShieldVfx = UNiagaraFunctionLibrary::SpawnSystemAttached(
-					ShieldVfx,
-					PrimaryShieldedAlly->GetRootComponent(),
-					NAME_None,
-					FVector::ZeroVector,
-					FRotator::ZeroRotator,
-					EAttachLocation::SnapToTarget,
-					true
-				);
-			}
+				//Start Shield
+				SetState(EEnemyState::Attacking);
+				PrimaryShieldedAlly->SetShielded(true);
+				ShieldedAllies.AddUnique(PrimaryShieldedAlly);
 
-			UE_LOG(LogTemp, Warning, TEXT("SocketWitch: Shielding %s"), *PrimaryShieldedAlly->GetName());
-			return true;
+				if (ShieldVfx != nullptr)
+				{
+					ActiveShieldVfx = UNiagaraFunctionLibrary::SpawnSystemAttached(
+						ShieldVfx,
+						PrimaryShieldedAlly->GetRootComponent(),
+						NAME_None,
+						FVector::ZeroVector,
+						FRotator::ZeroRotator,
+						EAttachLocation::SnapToTarget,
+						true
+					);
+				}
+
+				UE_LOG(LogTemp, Warning, TEXT("SocketWitch: Shielding %s"), *PrimaryShieldedAlly->GetName());
+				return true;
+			}
 		}
 	}
 
@@ -102,6 +116,8 @@ void AEnemySocketWitch::UpdateShield()
 
 void AEnemySocketWitch::StopShield()
 {
+	UE_LOG(LogTemp, Warning, TEXT("EnemySocketWitch: Stopping Shield..."));
+
 	for (AEnemyBase* Ally : ShieldedAllies)
 	{
 		if (Ally != nullptr)
@@ -116,6 +132,7 @@ void AEnemySocketWitch::StopShield()
 	if (ActiveShieldVfx != nullptr)
 	{
 		ActiveShieldVfx->DestroyComponent();
+		ActiveShieldVfx = nullptr;
 	}
 }
 
@@ -146,8 +163,6 @@ FVector AEnemySocketWitch::GetLocationNearAlly() const
 	const AActor* TargetAlly = (PrimaryShieldedAlly != nullptr)
 		                           ? Cast<AActor>(PrimaryShieldedAlly)
 		                           : UFunctionLibrary::GetClosestEnemy(this, RoomSearchRadius);
-	UE_LOG(LogTemp, Warning, TEXT("EnemySocketWitch: Target ally is %s"),
-	       (TargetAlly != nullptr) ? *TargetAlly->GetName() : TEXT("None"))
 
 	const UNavigationSystemV1* NavigationSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 	FNavLocation NavLocation;
@@ -159,7 +174,6 @@ FVector AEnemySocketWitch::GetLocationNearAlly() const
 		if (DistanceToAlly < ProtectionRange * 0.8f)
 		{
 			//If we are already close enough to the ally, let's stay there
-			UE_LOG(LogTemp, Warning, TEXT("EnemySocketWitch: Already close enough to ally, staying put"))
 			return GetActorLocation();
 		}
 
@@ -171,7 +185,6 @@ FVector AEnemySocketWitch::GetLocationNearAlly() const
 
 		if (NavigationSystem != nullptr && NavigationSystem->ProjectPointToNavigation(TargetPoint, NavLocation))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("EnemySocketWitch: Moving to position near %s"), *TargetAlly->GetName())
 			return NavLocation.Location;
 		}
 
@@ -179,7 +192,6 @@ FVector AEnemySocketWitch::GetLocationNearAlly() const
 		if (NavigationSystem != nullptr && NavigationSystem->GetRandomReachablePointInRadius(
 			TargetAlly->GetActorLocation(), ProtectionRange * 0.8f, NavLocation))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("EnemySocketWitch: Moving to random point near %s"), *TargetAlly->GetName())
 			return NavLocation.Location;
 		}
 
@@ -196,4 +208,12 @@ FVector AEnemySocketWitch::GetLocationNearAlly() const
 	}
 
 	return GetActorLocation();
+}
+
+void AEnemySocketWitch::Die()
+{
+	StopShield();
+	SetState(EEnemyState::Dead);
+	OnDeath.Broadcast(GetActorLocation(), BaseDropAmount);
+	Destroy();
 }

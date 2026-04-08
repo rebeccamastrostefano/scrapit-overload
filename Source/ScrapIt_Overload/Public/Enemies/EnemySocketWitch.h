@@ -24,7 +24,7 @@ protected:
 	float RoomSearchRadius = 5000.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Shield")
-	float ShieldRadius = 400.f;
+	float ShieldRadius = 200.f;
 
 	UPROPERTY(EditAnywhere, Category = "Shield")
 	class UNiagaraSystem* ShieldVfx;
@@ -63,4 +63,6 @@ public:
 	virtual void Attack() override
 	{
 	} //It's a pacifist;
+
+	virtual void Die() override;
 };
