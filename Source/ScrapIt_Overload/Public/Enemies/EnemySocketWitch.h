@@ -39,6 +39,8 @@ protected:
 	class UNiagaraComponent* ActiveShieldVfx;
 
 public:
+	AEnemySocketWitch();
+
 	UFUNCTION(BlueprintCallable, Category = "AI")
 	bool AttemptStartShield();
 

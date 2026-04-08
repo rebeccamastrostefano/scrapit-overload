@@ -8,6 +8,17 @@
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 
+AEnemySocketWitch::AEnemySocketWitch()
+{
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+	RootComponent = Mesh;
+
+	HurtboxSphere = CreateDefaultSubobject<USphereComponent>(TEXT("HurtboxSphere"));
+	HurtboxSphere->SetupAttachment(RootComponent);
+}
+
 void AEnemySocketWitch::BeginPlay()
 {
 	Super::BeginPlay();
