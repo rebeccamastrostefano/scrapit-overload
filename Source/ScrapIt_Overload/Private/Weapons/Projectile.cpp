@@ -50,7 +50,7 @@ void AProjectile::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherAc
 	{
 		if (IDamageable* Target = Cast<IDamageable>(OtherActor))
 		{
-			Target->TakeDamage(Damage);
+			Target->ReceiveDamage(Damage);
 			Destroy();
 		}
 	}

@@ -269,9 +269,9 @@ public:
 	FOnMagnetStateChange OnMagnetStateChange;
 
 	/* --- Public Functions --- */
-	virtual void TakeDamage(const float Amount) override;
+	virtual void ReceiveDamage(const float Amount) override;
 
-	virtual void ApplyImpactSlow(const float Amount);
+	void ApplyImpactSlow(const float Amount);
 
 	UFUNCTION(BlueprintCallable, Category = "Mecha State")
 	void StopMagnet();

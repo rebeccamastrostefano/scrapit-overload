@@ -107,7 +107,7 @@ public:
 	virtual void Die() override;
 
 	UFUNCTION()
-	virtual void TakeDamage(const float DamageAmount) override;
+	virtual void ReceiveDamage(const float DamageAmount) override;
 
 	//Getters
 	UFUNCTION(BlueprintCallable)

@@ -335,7 +335,7 @@ void AMechaPawn::UpdateTierModifiers(FMassTier Tier)
 }
 
 /* --- Vitality System --- */
-void AMechaPawn::TakeDamage(const float Amount)
+void AMechaPawn::ReceiveDamage(const float Amount)
 {
 	UE_LOG(LogTemp, Warning, TEXT("MechaPawn Taking Damage: %f"), Amount);
 

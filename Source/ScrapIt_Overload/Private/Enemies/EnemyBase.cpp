@@ -32,7 +32,7 @@ void AEnemyBase::BeginPlay()
 	Player = GetWorld()->GetFirstPlayerController()->GetPawn();
 }
 
-void AEnemyBase::TakeDamage(const float DamageAmount)
+void AEnemyBase::ReceiveDamage(const float DamageAmount)
 {
 	if (CurrentState == EEnemyState::Dead || bIsShielded)
 	{
@@ -84,7 +84,7 @@ void AEnemyBase::TriggerDamageTrace()
 			if (Overlap.GetActor()->Implements<UDamageable>() && !Overlap.GetActor()->GetClass()->IsChildOf(
 				AEnemyBase::StaticClass()))
 			{
-				Cast<IDamageable>(Overlap.GetActor())->TakeDamage(Damage);
+				Cast<IDamageable>(Overlap.GetActor())->ReceiveDamage(Damage);
 			}
 		}
 	}

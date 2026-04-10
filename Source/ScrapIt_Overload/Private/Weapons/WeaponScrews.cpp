@@ -42,7 +42,7 @@ void AWeaponScrews::OverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 		{
 			if (IDamageable* Target = Cast<IDamageable>(OtherActor))
 			{
-				Target->TakeDamage(BaseDamage);
+				Target->ReceiveDamage(Damage);
 				if (Player == nullptr)
 				{
 					UE_LOG(LogTemp, Warning, TEXT("WeaponScrews: Player is null!"));
