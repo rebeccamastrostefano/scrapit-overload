@@ -26,61 +26,42 @@ void AEnemySocketWitch::BeginPlay()
 
 bool AEnemySocketWitch::AttemptStartShield()
 {
-	TArray<AActor*> OverlappedActors;
-	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+	PerformShieldOverlap(GetActorLocation(), ProtectionRange);
 
-	TArray<AActor*> Ignore;
-	Ignore.Add(this);
-
-	const bool bFoundSomething = UKismetSystemLibrary::SphereOverlapActors(
-		GetWorld(),
-		GetActorLocation(),
-		ProtectionRange,
-		ObjectTypes,
-		AEnemyBase::StaticClass(), // Only look for classes that are AEnemyBase
-		Ignore,
-		OverlappedActors
-	);
-
-	if (bFoundSomething)
+	//Filter out enemies that are already shielded
+	OverlappedActorsInShieldCheck.RemoveAll([](AActor* OverlappedEnemy)
 	{
-		//Do not shield enemies that are already shielded or other SocketWitches
-		OverlappedActors.RemoveAll([](AActor* OverlappedEnemy)
+		const AEnemyBase* Enemy = Cast<AEnemyBase>(OverlappedEnemy);
+		return Enemy != nullptr && (Enemy->GetIsShielded());
+	});
+
+	if (OverlappedActorsInShieldCheck.Num() > 0)
+	{
+		// Pick the first valid enemy found
+		PrimaryShieldedAlly = Cast<AEnemyBase>(OverlappedActorsInShieldCheck[0]);
+
+		if (PrimaryShieldedAlly)
 		{
-			const AEnemyBase* Enemy = Cast<AEnemyBase>(OverlappedEnemy);
-			return Enemy != nullptr && (Enemy->GetIsShielded() || Cast<AEnemySocketWitch>(Enemy));
-		});
+			//Start Shield
+			SetState(EEnemyState::Attacking);
+			UpdateShield();
 
-
-		if (OverlappedActors.Num() > 0)
-		{
-			// Pick the first valid enemy found
-			PrimaryShieldedAlly = Cast<AEnemyBase>(OverlappedActors[0]);
-
-			if (PrimaryShieldedAlly)
+			//Spawn VFX
+			if (ShieldVfx != nullptr)
 			{
-				//Start Shield
-				SetState(EEnemyState::Attacking);
-				PrimaryShieldedAlly->SetShielded(true);
-				ShieldedAllies.AddUnique(PrimaryShieldedAlly);
-
-				if (ShieldVfx != nullptr)
-				{
-					ActiveShieldVfx = UNiagaraFunctionLibrary::SpawnSystemAttached(
-						ShieldVfx,
-						PrimaryShieldedAlly->GetRootComponent(),
-						NAME_None,
-						FVector::ZeroVector,
-						FRotator::ZeroRotator,
-						EAttachLocation::SnapToTarget,
-						true
-					);
-				}
-
-				UE_LOG(LogTemp, Warning, TEXT("SocketWitch: Shielding %s"), *PrimaryShieldedAlly->GetName());
-				return true;
+				ActiveShieldVfx = UNiagaraFunctionLibrary::SpawnSystemAttached(
+					ShieldVfx,
+					PrimaryShieldedAlly->GetRootComponent(),
+					NAME_None,
+					FVector::ZeroVector,
+					FRotator::ZeroRotator,
+					EAttachLocation::SnapToTarget,
+					true
+				);
 			}
+
+			UE_LOG(LogTemp, Warning, TEXT("SocketWitch: Shielding %s"), *PrimaryShieldedAlly->GetName());
+			return true;
 		}
 	}
 
@@ -90,39 +71,36 @@ bool AEnemySocketWitch::AttemptStartShield()
 
 void AEnemySocketWitch::UpdateShield()
 {
-	TArray<AActor*> ActorsToIgnore;
-	ActorsToIgnore.Add(this);
-	TArray<FHitResult> Hits;
-
-	if (UKismetSystemLibrary::SphereTraceMulti(GetWorld(), PrimaryShieldedAlly->GetActorLocation(),
-	                                           PrimaryShieldedAlly->GetActorLocation(), ShieldRadius,
-	                                           UEngineTypes::ConvertToTraceType(ECC_Pawn), false, ActorsToIgnore,
-	                                           EDrawDebugTrace::None, Hits, true))
+	if (PrimaryShieldedAlly == nullptr)
 	{
-		TArray<AEnemyBase*> CurrentEnemiesInSphere;
+		return;
+	}
 
-		for (FHitResult Hit : Hits)
-		{
-			if (AEnemyBase* Ally = Cast<AEnemyBase>(Hit.GetActor()))
-			{
-				CurrentEnemiesInSphere.Add(Ally);
-				if (!Ally->GetIsShielded())
-				{
-					Ally->SetShielded(true);
-					ShieldedAllies.AddUnique(Ally);
-				}
-			}
-		}
+	PerformShieldOverlap(PrimaryShieldedAlly->GetActorLocation(), ShieldRadius);
 
-		for (AEnemyBase* Ally : ShieldedAllies)
+	//Set the allies in the shield to be shielded
+	for (AActor* Enemy : OverlappedActorsInShieldCheck)
+	{
+		if (AEnemyBase* Ally = Cast<AEnemyBase>(Enemy))
 		{
-			if (!CurrentEnemiesInSphere.Contains(Ally))
+			if (!Ally->GetIsShielded())
 			{
-				Ally->SetShielded(false);
-				ShieldedAllies.Remove(Ally);
+				Ally->SetShielded(true);
+				ShieldedAllies.AddUnique(Ally);
 			}
 		}
 	}
+
+	//Remove all allies that left the shield radius
+	ShieldedAllies.RemoveAll([this](AEnemyBase* Ally)
+	{
+		if (!Ally || !OverlappedActorsInShieldCheck.Contains(Ally))
+		{
+			if (Ally) Ally->SetShielded(false);
+			return true;
+		}
+		return false;
+	});
 }
 
 void AEnemySocketWitch::StopShield()
@@ -221,10 +199,30 @@ FVector AEnemySocketWitch::GetLocationNearAlly() const
 	return GetActorLocation();
 }
 
+void AEnemySocketWitch::PerformShieldOverlap(const FVector& Location, const float Radius)
+{
+	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.Add(this);
+
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+	OverlappedActorsInShieldCheck.Reset();
+
+	UKismetSystemLibrary::SphereOverlapActors(
+		GetWorld(), Location, Radius, ObjectTypes,
+		AEnemyBase::StaticClass(), ActorsToIgnore, OverlappedActorsInShieldCheck
+	);
+
+	// Filter out other witches
+	OverlappedActorsInShieldCheck.RemoveAll([](const AActor* PotentialAlly)
+	{
+		return PotentialAlly->IsA<AEnemySocketWitch>();
+	});
+	OverlappedActorsInShieldCheck.Reset();
+}
+
 void AEnemySocketWitch::Die()
 {
 	StopShield();
-	SetState(EEnemyState::Dead);
-	OnDeath.Broadcast(GetActorLocation(), BaseDropAmount);
-	Destroy();
+	Super::Die();
 }

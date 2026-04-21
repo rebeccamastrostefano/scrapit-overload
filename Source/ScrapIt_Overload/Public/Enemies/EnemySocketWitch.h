@@ -32,11 +32,13 @@ protected:
 	UPROPERTY()
 	AEnemyBase* PrimaryShieldedAlly;
 
+	TArray<AActor*> OverlappedActorsInShieldCheck;
+
 	UPROPERTY()
 	TArray<AEnemyBase*> ShieldedAllies;
 
 	UPROPERTY()
-	class UNiagaraComponent* ActiveShieldVfx;
+	class UNiagaraComponent* ActiveShieldVfx = nullptr;
 
 public:
 	AEnemySocketWitch();
@@ -55,6 +57,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "AI")
 	FVector GetLocationNearAlly() const;
+
+	void PerformShieldOverlap(const FVector& Location, const float Radius);
 
 	UFUNCTION(BlueprintCallable, Category = "AI")
 	FORCEINLINE AActor* GetShieldedAlly() const
