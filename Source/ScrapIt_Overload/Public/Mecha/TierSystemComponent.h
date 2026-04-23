@@ -24,6 +24,12 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Mecha Settings")
 	TMap<UStaticMeshComponent*, int32> MassMeshesForTiers;
 
+	UPROPERTY(EditAnywhere, Category = "Mecha Settings")
+	float BackSocketOffset = 50.f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Mecha Settings")
+	USceneComponent* BackSocket;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha State")
 	FMassTier CurrentTier;
 

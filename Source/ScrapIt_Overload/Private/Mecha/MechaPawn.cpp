@@ -129,6 +129,8 @@ void AMechaPawn::InitializeVariables()
 
 	PersistentManager = GetGameInstance()->GetSubsystem<UPersistentManager>();
 	GameInstance = Cast<UScrapItGameInstance>(GetGameInstance());
+
+	TierSystem->BackSocket = SocketBack;
 }
 
 void AMechaPawn::SetupEnhancedInput() const
