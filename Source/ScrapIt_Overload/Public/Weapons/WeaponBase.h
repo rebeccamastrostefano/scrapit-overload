@@ -55,7 +55,7 @@ protected:
 
 	AActor* FindNearestEnemy() const;
 	bool IsInsideFireCone(const AActor* Target) const;
-	void TrackEnemy(const float DeltaTime);
+	void TrackEnemy(const float DeltaTime, UStaticMeshComponent* MeshToRotate);
 	FRotator GetSocketRotation() const;
 
 	void SetLevel(const int32 NewLevel);

@@ -14,24 +14,27 @@ UCLASS()
 class SCRAPIT_OVERLOAD_API AWeaponNailGun : public AWeaponBase
 {
 	GENERATED_BODY()
-	
+
 public:
 	AWeaponNailGun();
-	
+
 protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UStaticMeshComponent* NailGunMesh;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Settings")
 	TSubclassOf<class AProjectile> ProjectileBP;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Weapon Settings")
 	float ProjectileSpeed = 1500.f;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class USceneComponent* FirePoint;
-	
+
 	virtual void Fire() override;
-	
+
 	virtual void ApplyUniquePowerUp() override;
-	
+
 public:
 	virtual void Tick(float DeltaTime) override;
 };

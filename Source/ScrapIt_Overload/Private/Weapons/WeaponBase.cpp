@@ -56,7 +56,7 @@ bool AWeaponBase::IsInsideFireCone(const AActor* Target) const
 	return FVector::DotProduct(Forward, ToTarget) >= FireConeThreshold;
 }
 
-void AWeaponBase::TrackEnemy(const float DeltaTime)
+void AWeaponBase::TrackEnemy(const float DeltaTime, UStaticMeshComponent* MeshToRotate)
 {
 	FRotator TargetRotation;
 	if (CurrentTarget)
@@ -69,8 +69,9 @@ void AWeaponBase::TrackEnemy(const float DeltaTime)
 		TargetRotation = GetSocketRotation();
 	}
 
-	const FRotator NewRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, RotationSpeed);
-	SetActorRotation(NewRotation);
+	FRotator NewRotation = FMath::RInterpTo(MeshToRotate->GetComponentRotation(), TargetRotation, DeltaTime,
+	                                        RotationSpeed);
+	MeshToRotate->SetWorldRotation(NewRotation);
 }
 
 FRotator AWeaponBase::GetSocketRotation() const

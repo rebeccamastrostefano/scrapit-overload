@@ -5,6 +5,8 @@
 
 AWeaponNailGun::AWeaponNailGun()
 {
+	NailGunMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("NailGunMesh"));
+	NailGunMesh->SetupAttachment(RootComponent);
 	FirePoint = CreateDefaultSubobject<USceneComponent>(TEXT("FirePoint"));
 	FirePoint->SetupAttachment(RootComponent);
 }
@@ -12,9 +14,9 @@ AWeaponNailGun::AWeaponNailGun()
 void AWeaponNailGun::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
 	CurrentTarget = FindNearestEnemy();
-	TrackEnemy(DeltaTime);
+	TrackEnemy(DeltaTime, NailGunMesh);
 }
 
 void AWeaponNailGun::Fire()
@@ -25,8 +27,15 @@ void AWeaponNailGun::Fire()
 		SpawnParameters.Owner = this;
 		SpawnParameters.Instigator = GetInstigator();
 		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		
-		if (AProjectile* NewProjectile = GetWorld()->SpawnActor<AProjectile>(ProjectileBP, FirePoint->GetComponentTransform(), SpawnParameters))
+
+		//Override spawn rotation to point at the enemy, ensures correct aim
+		const FVector Direction = (CurrentTarget->GetActorLocation() - FirePoint->GetComponentLocation()).
+			GetSafeNormal();
+		FTransform SpawnTransform = FirePoint->GetComponentTransform();
+		SpawnTransform.SetRotation(Direction.Rotation().Quaternion());
+
+		if (AProjectile* NewProjectile = GetWorld()->SpawnActor<AProjectile>(
+			ProjectileBP, SpawnTransform, SpawnParameters))
 		{
 			NewProjectile->InitializeProjectile(BaseDamage, ProjectileSpeed);
 		}
@@ -41,10 +50,10 @@ void AWeaponNailGun::ApplyUniquePowerUp()
 {
 	switch (CurrentWeaponLevel)
 	{
-		case 1:
-			break;
-		default:
-			break;
+	case 1:
+		break;
+	default:
+		break;
 		//TODO: powerups
 	}
 }
