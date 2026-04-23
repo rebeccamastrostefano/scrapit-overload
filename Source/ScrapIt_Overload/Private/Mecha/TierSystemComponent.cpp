@@ -78,6 +78,14 @@ void UTierSystemComponent::ApplyNewTier(const FMassTier& Tier)
 	CurrentTier = Tier;
 	UpdateTierVisuals(CurrentTier);
 
+	//If we are on Tier 5, the back socket should be moved back (change in the mesh)
+	if (CurrentTier.TierNumber == 5 && BackSocket != nullptr)
+	{
+		FVector SocketLocation = BackSocket->GetRelativeLocation();
+		SocketLocation.X = BackSocketOffset;
+		BackSocket->SetRelativeLocation(SocketLocation);
+	}
+
 	//Update UI
 	OnTierChanged.Broadcast(CurrentTier); //TODO: check if it really changed
 	UE_LOG(LogTemp, Warning, TEXT("Tier Changed to: %d"), Tier.TierNumber);
