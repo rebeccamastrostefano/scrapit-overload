@@ -9,16 +9,20 @@
 #include "EnemySpawnerComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemiesCleared);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEnemyEliminated, FVector, DeathLocation, int32, BaseDropAmount);
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SCRAPIT_OVERLOAD_API UEnemySpawnerComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	// Sets default values for this component's properties
 	UEnemySpawnerComponent();
+
+	UPROPERTY(EditAnywhere, Category = "Room Configuration")
+	float EnemySpawnLocationZOffset = 5.f;
 
 protected:
 	void ProcessSpawnQueue();
@@ -28,13 +32,13 @@ protected:
 	FVector GetRandomSpawnPoint() const;
 	FVector GetValidNavMeshPoint(const FVector& Point) const;
 	FVector GetRandomClusterMemberSpawnPoint(const FVector& Center) const;
-	
+
 	UFUNCTION()
 	void OnEnemyDeath(FVector Location, int32 BaseDropAmount);
 
 	UPROPERTY()
 	UEnemyPool* ActivePool;
-	
+
 	UPROPERTY()
 	ARoomLayout* CurrentRoomLayout;
 
@@ -47,13 +51,13 @@ protected:
 	float MinSpawnDistance = 800.f;
 	float MaxSpawnDistance = 1500.f;
 
-public:	
+public:
 	UPROPERTY()
 	UEnemyPool* ActiveEnemyPool;
 
 	void RequestSpawnWave(UEnemyPool* Pool, const int32 TotalClusters, float Interval);
-	
-	FORCEINLINE void SetRoomLayout(ARoomLayout* RoomLayout) 
+
+	FORCEINLINE void SetRoomLayout(ARoomLayout* RoomLayout)
 	{
 		CurrentRoomLayout = RoomLayout;
 	}
