@@ -176,6 +176,7 @@ void AMechaPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Started, this, &AMechaPawn::StartMagnet);
 		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Canceled, this, &AMechaPawn::StopMagnet);
 		EnhancedInputComponent->BindAction(MagnetAction, ETriggerEvent::Completed, this, &AMechaPawn::StopMagnet);
+		EnhancedInputComponent->BindAction(DashAction, ETriggerEvent::Started, this, &AMechaPawn::PerformDash);
 	}
 }
 
@@ -217,6 +218,16 @@ void AMechaPawn::Tick(float DeltaTime)
 	ApplyLateralFriction();
 	UpdateMagnetDrag(DeltaTime);
 	AnimateWheels(DeltaTime);
+
+	//Handle Reset Dash
+	if (bIsDashing)
+	{
+		const float TimeSinceDash = GetWorld()->GetTimeSeconds() - LastDashTime;
+		if (TimeSinceDash >= DashDuration)
+		{
+			bIsDashing = false;
+		}
+	}
 }
 
 /* --- Movement Functions --- */
@@ -234,7 +245,7 @@ void AMechaPawn::ApplySteer(const FInputActionValue& Value)
 
 void AMechaPawn::UpdateThrust(const float Value) const
 {
-	if (FMath::IsNearlyZero(Value))
+	if (FMath::IsNearlyZero(Value) || bIsDashing)
 	{
 		return;
 	}
@@ -262,6 +273,22 @@ void AMechaPawn::UpdateSteer(const float DeltaTime)
 
 		MechaMesh->AddTorqueInDegrees(RotationTorque, NAME_None, true);
 	}
+}
+
+void AMechaPawn::PerformDash()
+{
+	const float CurrentTime = GetWorld()->GetTimeSeconds();
+	if (CurrentTime - LastDashTime < DashCooldown)
+	{
+		return;
+	}
+
+	LastDashTime = CurrentTime;
+
+	// Apply dash impulse
+	const FVector DashImpulse = MechaMesh->GetPhysicsLinearVelocity().GetSafeNormal() * DashForce;
+	MechaMesh->AddImpulse(DashImpulse);
+	bIsDashing = true;
 }
 
 void AMechaPawn::ApplyLateralFriction() const

@@ -48,8 +48,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* MagnetAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* DashAction;
+
 	void ApplyThrust(const FInputActionValue& Value);
 	void ApplySteer(const FInputActionValue& Value);
+	void PerformDash();
 
 	/* --- Components --- */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -125,6 +129,24 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Mecha Movement")
 	float MaxWheelAngle = 35.f;
+
+	/* --- DASH SETTINGS --- */
+	UPROPERTY(EditAnywhere, Category = "Mecha Dash")
+	float DashForce = 800000.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Mecha Dash")
+	float DashCooldown = 2.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Mecha Dash")
+	float DashDuration = 0.3f;
+
+	UPROPERTY(EditAnywhere, Category = "Mecha Dash")
+	float DashRestoreSpeed = 5.0f;
+
+	float LastDashTime = 0.0f;
+	FVector PreDashVelocity = FVector::ZeroVector;
+	bool bIsDashing = false;
+	bool bIsRestoring = false;
 
 	/* --- CAMERA SETTINGS --- */
 	UPROPERTY(EditAnywhere, Category = "Mecha Camera")
