@@ -26,6 +26,21 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Shield")
 	float ShieldRadius = 200.f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Shield")
+	float ShieldPulseTimeout = 0.5f;
+
+	UPROPERTY(EditAnywhere, Category = "Shield")
+	float MaxShieldReduction = 0.8f;
+
+	UPROPERTY(EditAnywhere, Category = "Shield")
+	float ShieldRampUpSpeed = 0.5f;
+
+	UPROPERTY(EditAnywhere, Category = "Shield")
+	float ShieldGracePeriod = 2.f;
+
+	UPROPERTY(EditAnywhere, Category = "Shield")
+	float ShieldDecaySpeed = 1.f;
+
 	UPROPERTY(EditAnywhere, Category = "Shield")
 	class UNiagaraSystem* ShieldVfx;
 
@@ -33,9 +48,6 @@ protected:
 	AEnemyBase* PrimaryShieldedAlly;
 
 	TArray<AActor*> OverlappedActorsInShieldCheck;
-
-	UPROPERTY()
-	TArray<AEnemyBase*> ShieldedAllies;
 
 	UPROPERTY()
 	class UNiagaraComponent* ActiveShieldVfx = nullptr;

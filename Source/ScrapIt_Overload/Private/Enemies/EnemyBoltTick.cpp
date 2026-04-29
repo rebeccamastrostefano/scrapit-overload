@@ -9,17 +9,17 @@
 // Sets default values
 AEnemyBoltTick::AEnemyBoltTick()
 {
- 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	
+
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-	
+
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 	RootComponent = Mesh;
-	
+
 	HurtboxSphere = CreateDefaultSubobject<USphereComponent>(TEXT("HurtboxSphere"));
 	HurtboxSphere->SetupAttachment(RootComponent);
-	
+
 	PawnMovement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("Movement Component"));
 	PawnMovement->MaxSpeed = MoveSpeed;
 }
@@ -28,12 +28,14 @@ AEnemyBoltTick::AEnemyBoltTick()
 void AEnemyBoltTick::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	CurrentState = EEnemyState::Chasing;
 }
 
 void AEnemyBoltTick::Tick(float DeltaTime)
 {
+	Super::Tick(DeltaTime);
+
 	if (CurrentState == EEnemyState::Chasing && Player != nullptr)
 	{
 		const float DistanceToPlayer = FVector::Dist(Player->GetActorLocation(), GetActorLocation());
@@ -59,7 +61,7 @@ void AEnemyBoltTick::Attack()
 	{
 		return;
 	}
-	
+
 	AIController->StopMovement();
 	SetState(EEnemyState::Attacking);
 }

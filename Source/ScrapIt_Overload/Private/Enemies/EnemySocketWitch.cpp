@@ -58,14 +58,16 @@ bool AEnemySocketWitch::AttemptStartShield()
 					EAttachLocation::SnapToTarget,
 					true
 				);
+
+				ActiveShieldVfx->SetFloatParameter("Radius", ShieldRadius);
 			}
 
-			UE_LOG(LogTemp, Warning, TEXT("SocketWitch: Shielding %s"), *PrimaryShieldedAlly->GetName());
+			UE_LOG(LogTemp, Verbose, TEXT("SocketWitch: Shielding %s"), *PrimaryShieldedAlly->GetName());
 			return true;
 		}
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("EnemySocketWitch: No valid target found for shielding"));
+	UE_LOG(LogTemp, Verbose, TEXT("EnemySocketWitch: No valid target found for shielding"));
 	return false;
 }
 
@@ -78,46 +80,24 @@ void AEnemySocketWitch::UpdateShield()
 
 	PerformShieldOverlap(PrimaryShieldedAlly->GetActorLocation(), ShieldRadius);
 
-	//Set the allies in the shield to be shielded
+	//Process everyone currently inside the shield
 	for (AActor* Enemy : OverlappedActorsInShieldCheck)
 	{
 		if (AEnemyBase* Ally = Cast<AEnemyBase>(Enemy))
 		{
-			if (!Ally->GetIsShielded())
-			{
-				Ally->SetShielded(true);
-				ShieldedAllies.AddUnique(Ally);
-			}
+			Ally->ReceiveShieldPulse(MaxShieldReduction, ShieldRampUpSpeed, ShieldGracePeriod, ShieldDecaySpeed,
+			                         ShieldPulseTimeout);
 		}
 	}
-
-	//Remove all allies that left the shield radius
-	ShieldedAllies.RemoveAll([this](AEnemyBase* Ally)
-	{
-		if (!Ally || !OverlappedActorsInShieldCheck.Contains(Ally))
-		{
-			if (Ally) Ally->SetShielded(false);
-			return true;
-		}
-		return false;
-	});
 }
 
 void AEnemySocketWitch::StopShield()
 {
-	UE_LOG(LogTemp, Warning, TEXT("EnemySocketWitch: Stopping Shield..."));
+	UE_LOG(LogTemp, Verbose, TEXT("EnemySocketWitch: Stopping Shield..."));
 
-	for (AEnemyBase* Ally : ShieldedAllies)
-	{
-		if (Ally != nullptr)
-		{
-			Ally->SetShielded(false);
-		}
-	}
-
-	ShieldedAllies.Empty();
 	PrimaryShieldedAlly = nullptr;
 	SetState(EEnemyState::Idle); //Use 'Idle' for not protecting state
+
 	if (ActiveShieldVfx != nullptr)
 	{
 		ActiveShieldVfx->DestroyComponent();
@@ -188,8 +168,9 @@ FVector AEnemySocketWitch::GetLocationNearAlly() const
 		return TargetAlly->GetActorLocation();
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("EnemySocketWitch: No Enemy to shield found"))
+	UE_LOG(LogTemp, Verbose, TEXT("EnemySocketWitch: No Enemy to shield found"))
 
+	//If no Ally found, just move to a random spot in range
 	if (NavigationSystem && NavigationSystem->GetRandomReachablePointInRadius(
 		GetActorLocation(), ProtectionRange, NavLocation))
 	{
@@ -218,7 +199,6 @@ void AEnemySocketWitch::PerformShieldOverlap(const FVector& Location, const floa
 	{
 		return PotentialAlly->IsA<AEnemySocketWitch>();
 	});
-	OverlappedActorsInShieldCheck.Reset();
 }
 
 void AEnemySocketWitch::Die()

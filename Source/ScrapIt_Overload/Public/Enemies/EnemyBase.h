@@ -84,7 +84,25 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	EEnemyState CurrentState = EEnemyState::Idle;
 
+	//Shield variables
+	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
+	class UNiagaraSystem* ShieldedVfx;
+
+	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
+	float ShieldWarmupTime = 1.f;
+
 	bool bIsShielded = false;
+	float CurrentShieldReduction = 0.f;
+	float TimeSinceLastPulse = 0.f;
+	float TimeInShield = 0.f;
+	float ShieldGracePeriod = 0.f;
+	float ShieldDecaySpeed = 0.f;
+	float MaxShieldReduction = 0.f;
+	float ShieldRampUpSpeed = 0.f;
+	float ShieldPulseTimeout = 0.f;
+
+	UPROPERTY()
+	class UNiagaraComponent* ActiveShieldedVfx = nullptr;
 
 public:
 	//Functions
@@ -109,6 +127,11 @@ public:
 	UFUNCTION()
 	virtual void ReceiveDamage(const float DamageAmount) override;
 
+	virtual void Tick(float DeltaTime) override;
+
+	void ReceiveShieldPulse(const float MaxReduction, const float RampUpSpeed, const float GracePeriod,
+	                        const float DecaySpeed, const float PulseTimeout);
+
 	//Getters
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE EEnemyState GetState() const
@@ -125,12 +148,6 @@ public:
 	//Setters
 	UFUNCTION(BlueprintCallable)
 	void SetState(const EEnemyState NewState);
-
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE void SetShielded(const bool Shielded)
-	{
-		bIsShielded = Shielded;
-	}
 
 	//Events
 	UPROPERTY(BlueprintAssignable)

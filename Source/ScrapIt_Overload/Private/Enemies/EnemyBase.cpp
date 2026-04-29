@@ -3,6 +3,8 @@
 
 #include "Enemies/EnemyBase.h"
 #include "Engine/OverlapResult.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 
 // Sets default values
 AEnemyBase::AEnemyBase()
@@ -32,14 +34,99 @@ void AEnemyBase::BeginPlay()
 	Player = GetWorld()->GetFirstPlayerController()->GetPawn();
 }
 
+void AEnemyBase::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	//Check if we are currently under the effect of a shield
+	if (bIsShielded)
+	{
+		TimeSinceLastPulse += DeltaTime;
+
+		if (TimeSinceLastPulse <= ShieldPulseTimeout)
+		{
+			TimeInShield += DeltaTime;
+
+			//If we have stayed in the shield long enough, we activate shielding
+			if (TimeInShield >= ShieldWarmupTime)
+			{
+				//Ramp up the shield
+				CurrentShieldReduction = FMath::Clamp(CurrentShieldReduction + (DeltaTime * ShieldRampUpSpeed), 0.f,
+				                                      MaxShieldReduction);
+
+				//Spawn VFX if not already spawned
+				if (ActiveShieldedVfx == nullptr && ShieldedVfx != nullptr)
+				{
+					ActiveShieldedVfx = UNiagaraFunctionLibrary::SpawnSystemAttached(
+						ShieldedVfx,
+						RootComponent,
+						NAME_None,
+						FVector::ZeroVector,
+						FRotator::ZeroRotator,
+						EAttachLocation::SnapToTarget,
+						true
+					);
+				}
+
+				//Ramp up intensity of VFX
+				if (ActiveShieldedVfx != nullptr)
+				{
+					ActiveShieldedVfx->SetFloatParameter("Intensity", CurrentShieldReduction);
+				}
+			}
+		}
+		else
+		{
+			//If we stepped out of shield before warmup finished, abort
+			if (TimeInShield < ShieldWarmupTime)
+			{
+				bIsShielded = false;
+				TimeInShield = 0.f;
+				return;
+			}
+
+			//Shield is already ongoing, but we are outside the shield area. Check if Grace period is expired, start shield decay (slowly bring the shield to 0)
+			if (TimeSinceLastPulse > ShieldGracePeriod)
+			{
+				CurrentShieldReduction = FMath::Clamp(CurrentShieldReduction - (DeltaTime * ShieldDecaySpeed), 0.f,
+				                                      MaxShieldReduction);
+
+				//Reduce intensity of VFX
+				if (ActiveShieldedVfx != nullptr)
+				{
+					ActiveShieldedVfx->SetFloatParameter("Intensity", CurrentShieldReduction);
+				}
+
+				//When shield is depleted, remove shield
+				if (CurrentShieldReduction <= 0.f)
+				{
+					bIsShielded = false;
+					TimeInShield = 0.f;
+
+					//Destroy VFX
+					if (ActiveShieldedVfx != nullptr)
+					{
+						ActiveShieldedVfx->Deactivate();
+						ActiveShieldedVfx->DestroyComponent();
+						ActiveShieldedVfx = nullptr;
+					}
+				}
+			}
+		}
+	}
+}
+
 void AEnemyBase::ReceiveDamage(const float DamageAmount)
 {
-	if (CurrentState == EEnemyState::Dead || bIsShielded)
+	if (CurrentState == EEnemyState::Dead)
 	{
 		return;
 	}
 
-	VitalityComponent->ApplyDamage(DamageAmount);
+	//Apply shield reduction if any
+	const float FinalDamage = DamageAmount * (1.f - CurrentShieldReduction);
+
+	VitalityComponent->ApplyDamage(FinalDamage);
 	SetState(EEnemyState::Hurt);
 }
 
@@ -95,4 +182,17 @@ void AEnemyBase::Die()
 	SetState(EEnemyState::Dead);
 	OnDeath.Broadcast(GetActorLocation(), BaseDropAmount);
 	Destroy();
+}
+
+void AEnemyBase::ReceiveShieldPulse(const float MaxReduction, const float RampUpSpeed, const float GracePeriod,
+                                    const float DecaySpeed, const float PulseTimeout)
+{
+	bIsShielded = true;
+	TimeSinceLastPulse = 0.f;
+
+	MaxShieldReduction = MaxReduction;
+	ShieldRampUpSpeed = RampUpSpeed;
+	ShieldGracePeriod = GracePeriod;
+	ShieldDecaySpeed = DecaySpeed;
+	ShieldPulseTimeout = PulseTimeout;
 }
