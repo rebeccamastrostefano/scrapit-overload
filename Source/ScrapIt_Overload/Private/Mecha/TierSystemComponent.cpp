@@ -11,7 +11,7 @@ UTierSystemComponent::UTierSystemComponent()
 
 void UTierSystemComponent::LoadTierState(int32 SavedTierNumber)
 {
-	CurrentTier = GetTierByNumber(SavedTierNumber);
+	ApplyNewTier(GetTierByNumber(SavedTierNumber));
 }
 
 void UTierSystemComponent::InitializeTierSystem()
