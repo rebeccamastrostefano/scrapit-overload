@@ -25,6 +25,9 @@ class SCRAPIT_OVERLOAD_API UScrapItGameInstance : public UGameInstance
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Global References")
+	int32 LevelsPerRun = 10;
+
+	UPROPERTY(EditAnywhere, Category = "Global References")
 	TSoftObjectPtr<UWorld> StartingLevel;
 
 	UPROPERTY(EditAnywhere, Category = "Global References")

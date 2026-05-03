@@ -36,9 +36,9 @@ void ULevelsManager::GenerateRun()
 	int32 IDCounter = 0;
 
 	//1. Create Ranks
-	for (int32 i = 0; i < 10; i++)
+	for (int32 i = 0; i < GameInstance->LevelsPerRun; i++)
 	{
-		const int32 NodesInRank = i == 0 || i == 9 ? 1 : FMath::RandRange(1, 3);
+		const int32 NodesInRank = i == 0 || i == GameInstance->LevelsPerRun - 1 ? 1 : FMath::RandRange(1, 3);
 		FLevelRank NewRank;
 
 		for (int32 j = 0; j < NodesInRank; j++)
@@ -47,7 +47,7 @@ void ULevelsManager::GenerateRun()
 			NewNode.LevelID = IDCounter;
 			NewNode.LevelType = i == 0
 				                    ? ELevelType::Standard
-				                    : (i == 9)
+				                    : (i == GameInstance->LevelsPerRun - 1)
 				                    ? ELevelType::FinalBoss
 				                    : GameInstance->LevelPool->GetRandomLevelType();
 			NewRank.Levels.Add(NewNode);
@@ -60,7 +60,7 @@ void ULevelsManager::GenerateRun()
 	}
 
 	//2. Link Ranks
-	for (int32 i = 0; i < 9; i++)
+	for (int32 i = 0; i < GameInstance->LevelsPerRun - 1; i++)
 	{
 		for (FLevelNode& Parent : RunMap[i].Levels)
 		{
