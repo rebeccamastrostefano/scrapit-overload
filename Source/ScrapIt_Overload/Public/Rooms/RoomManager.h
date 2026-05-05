@@ -44,7 +44,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	//Room Config
-	UPROPERTY(EditAnywhere, Category = "Room Configuration")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Room Configuration")
 	ERoomType RoomType;
 
 	UPROPERTY(EditAnywhere, Category = "Room Configuration")
@@ -105,7 +105,7 @@ protected:
 	void CompleteRoom();
 
 public:
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	UEnemySpawnerComponent* EnemySpawner;
 
 	UFUNCTION()

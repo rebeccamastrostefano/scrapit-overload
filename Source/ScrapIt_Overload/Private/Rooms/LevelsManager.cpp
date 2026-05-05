@@ -139,6 +139,8 @@ void ULevelsManager::SelectNextLevel(int32 TargetLevelID)
 		return;
 	}
 	CurrentLevelID = TargetLevelID;
+	CurrentLevelType = SelectedLevel->LevelType;
+
 	SelectedLevel->LevelType == ELevelType::Standard
 		? GenerateStandardLevel()
 		: GenerateSpecialLevel(SelectedLevel->LevelType);

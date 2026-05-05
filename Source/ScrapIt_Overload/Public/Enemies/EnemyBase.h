@@ -72,7 +72,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Enemy Settings")
 	float DamageTraceDistance = 100.f;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(BlueprintReadOnly)
 	UHealthComponent* VitalityComponent;
 
 	UPROPERTY()

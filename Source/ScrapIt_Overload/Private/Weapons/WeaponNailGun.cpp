@@ -38,6 +38,7 @@ void AWeaponNailGun::Fire()
 			ProjectileBP, SpawnTransform, SpawnParameters))
 		{
 			NewProjectile->InitializeProjectile(BaseDamage, ProjectileSpeed);
+			OnHitEnemy.Broadcast();
 		}
 		else
 		{

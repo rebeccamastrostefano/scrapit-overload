@@ -7,6 +7,8 @@
 #include "Scraps/ScrapGeneric.h"
 #include "WeaponBase.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHit);
+
 UCLASS()
 class SCRAPIT_OVERLOAD_API AWeaponBase : public AActor
 {
@@ -66,4 +68,7 @@ protected:
 
 public:
 	bool TryUpgrade(const int32 TierNumber);
+
+	UPROPERTY(BlueprintAssignable)
+	FOnHit OnHitEnemy;
 };

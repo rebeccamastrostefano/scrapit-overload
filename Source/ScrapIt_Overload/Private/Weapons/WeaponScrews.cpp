@@ -49,6 +49,7 @@ void AWeaponScrews::OverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 					return;
 				}
 				Player->ApplyImpactSlow(KnockbackForce);
+				OnHitEnemy.Broadcast();
 			}
 		}
 	}
