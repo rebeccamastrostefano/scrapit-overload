@@ -21,7 +21,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	USphereComponent* CollisionSphere;
 
 	UPROPERTY(EditAnywhere, Category = "Door Settings")
@@ -41,6 +41,9 @@ public:
 		DoorDirection = Direction;
 	}
 
+	UFUNCTION(BlueprintImplementableEvent)
 	void Open();
+
+	UFUNCTION(BlueprintImplementableEvent)
 	void Close();
 };

@@ -265,7 +265,18 @@ void ULevelsManager::SetupSpecialRooms(const int32 NumRooms, TArray<int32>& OutS
 
 void ULevelsManager::ConnectRooms(const int32 From, const int32 To, TArray<FIntPoint>& OccupiedCoordinates)
 {
-	const FIntPoint ConnectedCoordinates = GetRandomEmptyNeighbor(LevelMap[From].Coordinates, OccupiedCoordinates);
+	FIntPoint ConnectedCoordinates;
+
+	//Start room should always connect north
+	if (From == 0 && LevelMap[From].ConnectedRoomsIDs.Num() == 0)
+	{
+		ConnectedCoordinates = LevelMap[From].Coordinates + FIntPoint(0, 1); // North direction
+	}
+	else
+	{
+		ConnectedCoordinates = GetRandomEmptyNeighbor(LevelMap[From].Coordinates, OccupiedCoordinates);
+	}
+
 	LevelMap[To].Coordinates = ConnectedCoordinates;
 	OccupiedCoordinates.Add(ConnectedCoordinates);
 
