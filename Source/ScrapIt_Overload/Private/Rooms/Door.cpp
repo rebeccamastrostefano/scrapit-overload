@@ -59,15 +59,3 @@ void ADoor::OnDoorOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActo
 	LevelsManager->TransitionToRoomByID(TargetRoomID);
 	LevelsManager->SetCurrentRoomID(TargetRoomID);
 }
-
-void ADoor::Open()
-{
-	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	//TODO: Play animation/mesh change
-}
-
-void ADoor::Close()
-{
-	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//TODO: Play animation/mesh change
-}

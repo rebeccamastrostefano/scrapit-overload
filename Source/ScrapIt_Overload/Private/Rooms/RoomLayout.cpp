@@ -28,6 +28,19 @@ void ARoomLayout::BeginPlay()
 	{
 		ObstacleSlots.Add(Cast<USceneComponent>(Comp));
 	}
+
+	TArray<FName> DoorSocketTags = {"Door_N", "Door_S", "Door_E", "Door_W"};
+	for (const FName& SocketTag : DoorSocketTags)
+	{
+		TArray<UActorComponent*> DoorComponents = GetComponentsByTag(USceneComponent::StaticClass(), SocketTag);
+		for (UActorComponent* Comp : DoorComponents)
+		{
+			if (USceneComponent* DoorSocket = Cast<USceneComponent>(Comp))
+			{
+				AvailableDoorSockets.Add(DoorSocket);
+			}
+		}
+	}
 }
 
 void ARoomLayout::GenerateObstacles(TArray<TSubclassOf<AActor>> ObstaclePool)
@@ -59,7 +72,7 @@ void ARoomLayout::SpawnDoorAtSocket(const FName SocketTag, const int32 RoomID)
 
 	if (DoorSpawnPoints.Num() > 0)
 	{
-		const USceneComponent* SpawnPoint = Cast<USceneComponent>(DoorSpawnPoints[0]);
+		USceneComponent* SpawnPoint = Cast<USceneComponent>(DoorSpawnPoints[0]);
 		const UScrapItGameInstance* GameInstance = Cast<UScrapItGameInstance>(GetGameInstance());
 
 		check(GameInstance != nullptr);
@@ -68,7 +81,7 @@ void ARoomLayout::SpawnDoorAtSocket(const FName SocketTag, const int32 RoomID)
 		{
 			//Spawn door
 			if (ADoor* Door = GetWorld()->SpawnActor<ADoor>(DoorBP, SpawnPoint->GetComponentLocation(),
-			                                                FRotator::ZeroRotator))
+			                                                SpawnPoint->GetComponentRotation()))
 			{
 				Door->SetRoomID(RoomID);
 
@@ -80,11 +93,71 @@ void ARoomLayout::SpawnDoorAtSocket(const FName SocketTag, const int32 RoomID)
 				Door->SetDoorDirection(Direction);
 
 				Doors.Add(Door);
+				AvailableDoorSockets.Remove(SpawnPoint);
 			}
 		}
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("RoomLayout: No Door BP assigned in GameInstance"));
+		}
+
+		//Deactivate wall at door location
+		const TArray<UActorComponent*> Walls = GetComponentsByTag(UBoxComponent::StaticClass(),
+		                                                          DoorTagToWallTag(SocketTag));
+		if (Walls.Num() > 0)
+		{
+			Walls[0]->DestroyComponent();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("RoomLayout: No wall to deactivate at door location"));
+		}
+	}
+}
+
+void ARoomLayout::SpawnExit()
+{
+	//Get exit location from a random available door socket
+	if (AvailableDoorSockets.Num() > 0)
+	{
+		// Get random available socket
+		const int32 RandomIndex = FMath::RandRange(0, AvailableDoorSockets.Num() - 1);
+		USceneComponent* SpawnPoint = AvailableDoorSockets[RandomIndex];
+
+		AvailableDoorSockets.RemoveAt(RandomIndex);
+
+		if (ExitBP != nullptr)
+		{
+			//Spawn exit
+			FVector SpawnLocation = SpawnPoint->GetComponentLocation();
+			FRotator SpawnRotation = SpawnPoint->GetComponentRotation();
+
+			AActor* Exit = GetWorld()->SpawnActor<AActor>(ExitBP, SpawnLocation, SpawnRotation);
+
+			if (Exit)
+			{
+				// Disable physics if it has any
+				if (UPrimitiveComponent* RootPrimitive = Cast<UPrimitiveComponent>(Exit->GetRootComponent()))
+				{
+					RootPrimitive->SetSimulatePhysics(false);
+				}
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("RoomLayout: No Exit BP assigned"));
+		}
+
+		//Deactivate wall at exit location
+		TArray<UActorComponent*> Walls = GetComponentsByTag(UBoxComponent::StaticClass(),
+		                                                    DoorTagToWallTag(SpawnPoint->ComponentTags[0]));
+		if (Walls.Num() > 0)
+		{
+			Walls[0]->DestroyComponent();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("RoomLayout: No wall to deactivate at exit location"));
 		}
 	}
 }

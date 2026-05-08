@@ -68,7 +68,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Room Generation")
 	TArray<TSubclassOf<AActor>> ObstaclePool;
 
-	UPROPERTY(VisibleAnywhere, Category = "Room State")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Room State")
 	ARoomLayout* CurrentRoomLayout;
 
 	//Room State

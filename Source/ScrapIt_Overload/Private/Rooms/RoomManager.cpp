@@ -136,6 +136,11 @@ void ARoomManager::SpawnDoors(FRoomNode& RoomNode) const
 		}
 
 		CurrentRoomLayout->SpawnDoorAtSocket(TargetSocket, NeighborID);
+
+		if (RoomNode.RoomType == ERoomType::Exit)
+		{
+			CurrentRoomLayout->SpawnExit();
+		}
 	}
 }
 
@@ -196,7 +201,7 @@ void ARoomManager::TeleportPlayerToEntry() const
 
 		if (Player != nullptr && EntryPoint != nullptr)
 		{
-			const FVector SpawnLocation = EntryPoint->GetComponentLocation() + (EntryPoint->GetForwardVector() * 300.f);
+			const FVector SpawnLocation = EntryPoint->GetComponentLocation() + (EntryPoint->GetForwardVector() * 550.f);
 			Player->SetActorLocationAndRotation(SpawnLocation, EntryPoint->GetComponentRotation());
 		}
 		UE_LOG(LogTemp, Warning, TEXT("RoomManager: Teleported player to room entry point!"))
