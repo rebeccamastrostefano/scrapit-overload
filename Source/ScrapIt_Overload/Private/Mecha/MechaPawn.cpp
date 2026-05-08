@@ -289,6 +289,8 @@ void AMechaPawn::PerformDash()
 	const FVector DashImpulse = MechaMesh->GetPhysicsLinearVelocity().GetSafeNormal() * DashForce;
 	MechaMesh->AddImpulse(DashImpulse);
 	bIsDashing = true;
+
+	OnDash.Broadcast(DashCooldown);
 }
 
 void AMechaPawn::ApplyLateralFriction() const

@@ -22,6 +22,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerDeath);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMagnetStateChange, bool, bIsActive);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDash, float, DashCooldown);
+
 UCLASS()
 class SCRAPIT_OVERLOAD_API AMechaPawn : public APawn, public IDamageable
 {
@@ -289,6 +291,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Mecha State")
 	FOnMagnetStateChange OnMagnetStateChange;
+
+	UPROPERTY(BlueprintAssignable, Category = "Mecha State")
+	FOnDash OnDash;
 
 	/* --- Public Functions --- */
 	virtual void ReceiveDamage(const float Amount) override;
