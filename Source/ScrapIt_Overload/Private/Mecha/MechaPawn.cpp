@@ -418,8 +418,6 @@ void AMechaPawn::Die()
 {
 	OnPlayerDeath.Broadcast();
 	PersistentManager->ResetRun();
-	GameInstance->LoadStartingLevel();
-	UE_LOG(LogTemp, Warning, TEXT("Game Over"));
 }
 
 /* Other */

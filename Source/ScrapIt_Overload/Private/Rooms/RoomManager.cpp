@@ -189,7 +189,7 @@ void ARoomManager::TeleportPlayerToEntry() const
 {
 	const EDoorDirection EntryDirection = LevelsManager->
 		GetOppositeDoorDirection(LevelsManager->GetLastExitDirection());
-	if (EntryDirection == None)
+	if (EntryDirection == None || LevelsManager->GetCurrentRoomID() == 0)
 	{
 		return; //Likely the starting room, player should already be in position with the PlayerStart
 	}
