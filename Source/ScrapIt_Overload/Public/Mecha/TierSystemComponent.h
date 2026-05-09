@@ -33,6 +33,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mecha State")
 	FMassTier CurrentTier;
 
+	bool bIsBackSocketWithOffset = false;
+
 	//Functions
 	void InitializeTierSystem();
 	void LoadTierState(int32 SavedTierNumber);

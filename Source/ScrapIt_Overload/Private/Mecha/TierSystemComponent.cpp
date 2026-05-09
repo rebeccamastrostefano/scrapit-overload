@@ -79,14 +79,16 @@ void UTierSystemComponent::ApplyNewTier(const FMassTier& Tier)
 		FVector SocketLocation = BackSocket->GetRelativeLocation();
 
 		//If we are on Tier 5, the back socket should be moved back (change in the mesh)
-		if (Tier.TierNumber == 5)
+		if (!bIsBackSocketWithOffset && Tier.TierNumber >= 5)
 		{
 			SocketLocation.X += BackSocketOffset;
+			bIsBackSocketWithOffset = true;
 		}
 		//If we are downgrading from Tier 5, move the socket back
-		else if (CurrentTier.TierNumber >= 5 && Tier.TierNumber < 5)
+		else if (bIsBackSocketWithOffset && CurrentTier.TierNumber >= 5 && Tier.TierNumber < 5)
 		{
 			SocketLocation.X -= BackSocketOffset;
+			bIsBackSocketWithOffset = false;
 		}
 
 		BackSocket->SetRelativeLocation(SocketLocation);
