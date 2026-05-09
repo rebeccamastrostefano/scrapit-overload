@@ -74,17 +74,28 @@ void UTierSystemComponent::CheckForTierChange(const int32 CurrentScraps, const b
 
 void UTierSystemComponent::ApplyNewTier(const FMassTier& Tier)
 {
+	if (BackSocket != nullptr)
+	{
+		FVector SocketLocation = BackSocket->GetRelativeLocation();
+
+		//If we are on Tier 5, the back socket should be moved back (change in the mesh)
+		if (Tier.TierNumber == 5)
+		{
+			SocketLocation.X += BackSocketOffset;
+		}
+		//If we are downgrading from Tier 5, move the socket back
+		else if (CurrentTier.TierNumber >= 5 && Tier.TierNumber < 5)
+		{
+			SocketLocation.X -= BackSocketOffset;
+		}
+
+		BackSocket->SetRelativeLocation(SocketLocation);
+	}
+
+
 	//We are upgrading or downgrading Tier
 	CurrentTier = Tier;
 	UpdateTierVisuals(CurrentTier);
-
-	//If we are on Tier 5, the back socket should be moved back (change in the mesh)
-	if (CurrentTier.TierNumber == 5 && BackSocket != nullptr)
-	{
-		FVector SocketLocation = BackSocket->GetRelativeLocation();
-		SocketLocation.X = BackSocketOffset;
-		BackSocket->SetRelativeLocation(SocketLocation);
-	}
 
 	//Update UI
 	OnTierChanged.Broadcast(CurrentTier); //TODO: check if it really changed
