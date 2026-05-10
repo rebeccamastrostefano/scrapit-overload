@@ -32,6 +32,7 @@ void ULevelsManager::Deinitialize()
 void ULevelsManager::GenerateRun()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Generating Run..."));
+	CurrentLevelID = 0;
 	RunMap.Empty();
 	int32 IDCounter = 0;
 

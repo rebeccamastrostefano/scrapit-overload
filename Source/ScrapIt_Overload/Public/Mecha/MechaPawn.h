@@ -12,7 +12,8 @@
 #include "Core/ScrapItGameInstance.h"
 #include "MechaPawn.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnScrapCountChanged, int32, NewScrapCount, bool, bIsIncremental);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnScrapCountChanged, int32, NewScrapCount, bool, bIsIncremental, int32,
+                                               AmountChanged);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float, Health);
 

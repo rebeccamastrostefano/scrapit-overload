@@ -40,7 +40,7 @@ public:
 	void LoadTierState(int32 SavedTierNumber);
 
 	UFUNCTION()
-	void CheckForTierChange(const int32 CurrentScraps, const bool bScrapIsIncrementing);
+	void CheckForTierChange(const int32 CurrentScraps, const bool bScrapIsIncrementing, const int32 Amount);
 
 	void ApplyNewTier(const FMassTier& Tier);
 	void UpdateTierVisuals(const FMassTier& Tier);

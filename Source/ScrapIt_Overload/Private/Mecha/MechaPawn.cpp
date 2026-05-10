@@ -201,7 +201,7 @@ void AMechaPawn::LoadMechaState(const FMechaRunState& MechaRunState)
 	{
 		CurrentScraps = 0;
 	}
-	OnScrapCountChanged.Broadcast(CurrentScraps, false);
+	OnScrapCountChanged.Broadcast(CurrentScraps, false, 0);
 
 	//Load Weapons
 	if (WeaponSystem != nullptr)
@@ -352,7 +352,7 @@ void AMechaPawn::AddScrap(const int32 Amount)
 {
 	CurrentScraps += Amount;
 	bool bIsIncremental = Amount > 0;
-	OnScrapCountChanged.Broadcast(CurrentScraps, bIsIncremental);
+	OnScrapCountChanged.Broadcast(CurrentScraps, bIsIncremental, Amount);
 }
 
 void AMechaPawn::UpdateTierModifiers(FMassTier Tier)

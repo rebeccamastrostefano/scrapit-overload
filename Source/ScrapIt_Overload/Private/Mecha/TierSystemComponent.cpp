@@ -41,7 +41,8 @@ void UTierSystemComponent::InitializeTierSystem()
 	OnTierChanged.Broadcast(CurrentTier);
 }
 
-void UTierSystemComponent::CheckForTierChange(const int32 CurrentScraps, const bool bScrapIsIncrementing)
+void UTierSystemComponent::CheckForTierChange(const int32 CurrentScraps, const bool bScrapIsIncrementing,
+                                              const int32 Amount)
 {
 	//Determine if we are upgrading, downgrading or staying same tier
 	const int32 TierDirection = (CurrentScraps > CurrentTier.UpgradeThreshold)
